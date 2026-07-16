@@ -36,11 +36,12 @@ Run: `java -cp tla2tools.jar tlc2.TLC -workers N -deadlock MC<name>`.
 
 | Config                | Models                                            | Result |
 |-----------------------|---------------------------------------------------|--------|
-| MCExplicitOK          | final ABI, unique cookies (3 threads)             | PASS (incl. Recovery) |
+| MCExplicitOK          | final ABI, unique cookies (3 threads)             | PASS (incl. Recovery; 138k states) |
 | MCExplicitTid         | classic TID protocol, TID collision across pidns  | Exclusion **violated** (the original kernel bug) |
 | MCExplicitOldABI      | pending op attributed via shared entry cookie     | Exclusion **violated** (why list_op_pending_cookie exists) |
-| MCCounterOK           | final counter protocol (3 threads)                | PASS |
-| MCCounterOKLive       | final counter protocol (2 threads, + liveness)    | PASS (incl. Recovery) |
+| MCCounterOK10         | final counter protocol (3 threads, MaxCtr=10: a full cookie wrap + margin) | PASS, exhaustive: 3,511,823,398 states generated, 821,073,870 distinct |
+| MCCounterOKLive       | final counter protocol (2 threads, MaxCtr=12, + liveness) | PASS (incl. Recovery) |
+| MCCounterOK           | as OK10 but MaxCtr=12                             | no violation in 6.5e9 generated / 1.66e9 distinct states (search stopped before exhaustion; OK10 is the completed exhaustive bound) |
 | MCCounterNoExitFixup  | no exit time pending fixups (3 threads)           | Exclusion **violated** (fatal-signal death windows; the fence cannot reach a dead task) |
 | MCCounterOrigDesign   | entry cookie attribution, fence on, no exit fixup | Exclusion **violated** (the design as originally sketched) |
 | MCCounterOldABI       | entry cookie attribution + exit fixups + fence    | Recovery **violated** (a contender overwriting the entry cookie makes a dead owner uncleanable: waiters hang) |
