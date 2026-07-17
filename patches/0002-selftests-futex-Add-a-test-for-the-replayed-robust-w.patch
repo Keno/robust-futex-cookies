@@ -1,0 +1,147 @@
+From 0760307d1638571f73b747737e5d7421cbce324a Mon Sep 17 00:00:00 2001
+From: Keno Fischer <keno@juliahub.com>
+Date: Fri, 17 Jul 2026 15:44:13 +0000
+Subject: [PATCH 2/8] selftests/futex: Add a test for the replayed robust
+ wakeup
+
+Test that the exit time robust list walk wakes a waiter when it
+discards the dying task's pending lock operation because the futex is
+owned by a different, live task - the dying task may have been a woken
+waiter which was killed before it could act on its wakeup, and that
+wakeup would otherwise be lost (the robust unlock which issued it also
+wiped FUTEX_WAITERS, so the futex's new owner will unlock through the
+uncontended fast path).
+
+The test constructs the post-race state deterministically instead of
+racing the unlock/re-acquire/kill sequence: the futex value carries
+the parent's TID with FUTEX_WAITERS clear, the parent stands in for
+the remaining waiter, and a child dies with list_op_pending armed on
+the futex. The child only exits once the parent is provably queued on
+the futex (flag handshake plus /proc state poll), so the test is not
+timing sensitive. On a kernel without the fix the parent's futex_wait
+times out; with the fix it is woken and the futex value is untouched.
+
+This patch was developed with the assistance of Claude (an AI
+assistant by Anthropic); the author reviewed, validated and takes
+responsibility for the changes.
+
+Signed-off-by: Keno Fischer <keno@juliahub.com>
+---
+ .../selftests/futex/functional/robust_list.c  | 101 ++++++++++++++++++
+ 1 file changed, 101 insertions(+)
+
+diff --git a/tools/testing/selftests/futex/functional/robust_list.c b/tools/testing/selftests/futex/functional/robust_list.c
+index b3fab60181d5..2baf6c3a0b19 100644
+--- a/tools/testing/selftests/futex/functional/robust_list.c
++++ b/tools/testing/selftests/futex/functional/robust_list.c
+@@ -480,6 +480,107 @@ static int child_wait_lock(void *arg)
+ 	return 0;
+ }
+ 
++static _Atomic(int) parent_waiting;
++
++/*
++ * Die with list_op_pending armed on a futex owned by the (live) parent,
++ * emulating a waiter which was woken by a robust unlock and killed
++ * before it could act on the wakeup: by the time its exit walk runs,
++ * the futex was re-acquired through the uncontended fast path, so the
++ * futex value carries a live owner TID and no FUTEX_WAITERS.
++ */
++static int child_fn_pending_mismatch(void *arg)
++{
++	struct lock_struct *lock = arg;
++	struct robust_list_head head;
++	char path[64], buf[128];
++	int ret;
++
++	ret = set_list(&head);
++	if (ret) {
++		ksft_test_result_fail("set_robust_list error\n");
++		return ret;
++	}
++
++	head.list_op_pending = &lock->list;
++
++	/*
++	 * Wait until the parent sleeps in futex_wait(): parent_waiting is
++	 * set right before the call, after which the futex wait is the
++	 * only sleep ('S' state) the parent can enter. Once the parent is
++	 * both past the flag store and in 'S', it is queued on the futex:
++	 * the wakeup this child's death replays cannot get lost.
++	 */
++	while (!atomic_load(&parent_waiting))
++		usleep(SLEEP_US);
++
++	snprintf(path, sizeof(path), "/proc/%d/stat", getppid());
++	for (;;) {
++		char *state = NULL;
++		FILE *f = fopen(path, "r");
++
++		if (f && fgets(buf, sizeof(buf), f))
++			state = strrchr(buf, ')');
++		if (f)
++			fclose(f);
++		if (state && state[1] == ' ' && state[2] == 'S')
++			break;
++		usleep(SLEEP_US);
++	}
++
++	/* Dying now runs the robust exit walk on list_op_pending */
++	return 0;
++}
++
++/*
++ * A robust unlock wakes a single waiter and wipes FUTEX_WAITERS along
++ * with the owner TID. If that waiter is killed before it acquires the
++ * futex or re-arms FUTEX_WAITERS, and another task re-acquired the
++ * futex in the meantime, the exit time robust list walk is the only
++ * place left which knows a wakeup may have been consumed: it must wake
++ * a waiter when it discards the dying task's pending op because the
++ * futex has a live owner, otherwise the remaining waiters sleep
++ * forever behind an owner which will never see contention.
++ *
++ * Construct the post-race state directly: the futex value carries the
++ * parent's TID with FUTEX_WAITERS clear, the parent stands in for the
++ * remaining waiter, and the child dies with list_op_pending armed on
++ * the futex. The parent must be woken and the futex value must be
++ * untouched.
++ */
++TEST(test_robust_pending_mismatch_wake)
++{
++	struct lock_struct lock = { .futex = 0 };
++	_Atomic(unsigned int) *futex = &lock.futex;
++	struct timespec to = { .tv_sec = FUTEX_TIMEOUT };
++	struct robust_list_head head;
++	pid_t tid = gettid();
++	int ret, pid, wstatus;
++
++	ret = set_list(&head);
++	ASSERT_EQ(ret, 0);
++
++	atomic_store(futex, tid);
++
++	pid = create_child(child_fn_pending_mismatch, &lock);
++	ASSERT_NE(pid, -1);
++
++	atomic_store(&parent_waiting, 1);
++	ret = futex_wait((futex_t *)futex, tid, &to, 0);
++
++	/* Woken by the exit walk's replayed wakeup, not timed out */
++	ASSERT_EQ(ret, 0);
++
++	/* The futex has a live owner: the walk must not touch its value */
++	ASSERT_EQ(atomic_load(futex), (unsigned int)tid);
++
++	ASSERT_EQ(wait(&wstatus), pid);
++	ASSERT_TRUE(WIFEXITED(wstatus));
++	ASSERT_EQ(WEXITSTATUS(wstatus), 0);
++
++	ksft_test_result_pass("%s\n", __func__);
++}
++
+ /*
+  * Test a robust list of more than one element. All the waiters should wake when
+  * the holder dies
+-- 
+2.54.0
+

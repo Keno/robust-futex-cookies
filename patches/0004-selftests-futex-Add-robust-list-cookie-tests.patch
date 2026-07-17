@@ -1,7 +1,7 @@
-From bbad295ad7b14219cb5eba06a178cf3f4582cf8d Mon Sep 17 00:00:00 2001
+From cf0c8696f1b52ea90635f67b4d1790c7c91c6da0 Mon Sep 17 00:00:00 2001
 From: Keno Fischer <keno@juliahub.com>
 Date: Thu, 16 Jul 2026 08:20:22 +0000
-Subject: [PATCH 2/6] selftests/futex: Add robust list cookie tests
+Subject: [PATCH 4/8] selftests/futex: Add robust list cookie tests
 
 Exercise the ROBUST_LIST_COOKIE extension:
 
@@ -13,7 +13,17 @@ Exercise the ROBUST_LIST_COOKIE extension:
     woken.
 
   - Exit time cleanup with mismatched cookies: a futex which appears to
-    be owned by somebody else must be left untouched.
+    be owned by somebody else must be left untouched. A mismatched
+    pending op additionally comes with the deterministic replayed
+    wakeup; a mismatched queued entry stays silent and the waiter times
+    out.
+
+  - The pending-before-entries cleanup order: a cookie lease reuse ABA
+    reproducer (a lease slot released mid-walk while the parent reuses
+    the cookie on the pending op's lock), a linked pending op whose
+    ->next is overwritten by a new owner mid-walk, a pending op linked
+    at every list position and an unreadable pending op which must not
+    suppress the cleanup of valid entries.
 
   - The actual PID namespace ambiguity scenario: two processes in
     different PID namespaces observe the same namespace local TID. One
@@ -31,29 +41,12 @@ assistant by Anthropic); the author reviewed, validated and takes
 responsibility for the changes.
 
 Signed-off-by: Keno Fischer <keno@juliahub.com>
-
-squash! selftests/futex: Add robust list cookie tests
-
-Add tests for the pending-before-entries cleanup order: a cookie lease
-reuse ABA reproducer (a lease slot released mid-walk while the parent
-reuses the cookie on the pending op's lock), a linked pending op whose
-->next is overwritten by a new owner mid-walk, a pending op linked at
-every list position and an unreadable pending op which must not
-suppress the cleanup of valid entries.
-
-squash! selftests/futex: Add robust list cookie tests
-
-The pending op mismatch case now expects the deterministic wake up
-which the kernel issues when discarding a dying task's pending op for
-a foreign owned lock (the consumed-wakeup replay), while still
-requiring the futex value to be untouched; the queued entry mismatch
-case still expects a timeout.
 ---
  .../selftests/futex/functional/robust_list.c  | 823 +++++++++++++++++-
  1 file changed, 820 insertions(+), 3 deletions(-)
 
 diff --git a/tools/testing/selftests/futex/functional/robust_list.c b/tools/testing/selftests/futex/functional/robust_list.c
-index b3fab60181d5..190fbc74923b 100644
+index 2baf6c3a0b19..83956c8ac589 100644
 --- a/tools/testing/selftests/futex/functional/robust_list.c
 +++ b/tools/testing/selftests/futex/functional/robust_list.c
 @@ -41,9 +41,13 @@
@@ -86,7 +79,7 @@ index b3fab60181d5..190fbc74923b 100644
  	ASSERT_EQ(ret, -1);
  	ASSERT_EQ(errno, EINVAL);
  
-@@ -788,4 +797,812 @@ TEST_F(futex_op, test_futex_robust_unlock)
+@@ -889,4 +898,812 @@ TEST_F(futex_op, test_futex_robust_unlock)
  	ASSERT_EQ((uintptr_t)(unsigned long)head.list_op_pending, exp);
  }
  

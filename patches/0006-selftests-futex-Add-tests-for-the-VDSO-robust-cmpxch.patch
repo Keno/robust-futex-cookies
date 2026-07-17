@@ -1,7 +1,7 @@
-From 15db64540dc55e392cdb1b93ca1f1dba7bf60d09 Mon Sep 17 00:00:00 2001
+From e41ec14f5625f6876cf371f63d5a56314616ccff Mon Sep 17 00:00:00 2001
 From: Keno Fischer <keno@juliahub.com>
 Date: Thu, 16 Jul 2026 08:22:51 +0000
-Subject: [PATCH 4/6] selftests/futex: Add tests for the VDSO robust cmpxchg
+Subject: [PATCH 6/8] selftests/futex: Add tests for the VDSO robust cmpxchg
  RSEQ operations
 
 Exercise __vdso_futex_robust_list{64,32}_cmpxchg_rseq():
@@ -21,6 +21,16 @@ Exercise __vdso_futex_robust_list{64,32}_cmpxchg_rseq():
     return implies the pending op is disarmed and the free lock word was
     not touched (a stale reservation is never published).
 
+  - A fatal signal stress test for the exit time fixups: children run a
+    tight VDSO lock/unlock loop against their registered robust list
+    head and are SIGKILLed at pseudo-random points; after every death
+    the lock word must be released or marked FUTEX_OWNER_DIED, never
+    left owned by the dead child. The critical windows cannot be
+    reached deterministically: any ptrace or breakpoint stop inside
+    them triggers the RSEQ abort fixup by design, which is exactly why
+    the fatal signal path needs the exit time fixups (their necessity
+    under identifier reuse is established by the TLA+ model).
+
 The tests register their own rseq TLS area and fall back to the glibc
 provided registration via __rseq_offset on libcs which register rseq on
 their own.
@@ -30,24 +40,12 @@ assistant by Anthropic); the author reviewed, validated and takes
 responsibility for the changes.
 
 Signed-off-by: Keno Fischer <keno@juliahub.com>
-
-squash! selftests/futex: Add tests for the VDSO robust cmpxchg RSEQ operations
-
-Add fatal-signal stress coverage for the exit time fixups (issue #31):
-children run a tight VDSO lock/unlock loop against the registered
-robust list head and are SIGKILLed at pseudo-random points; after every
-death the lock word must be released or FUTEX_OWNER_DIED, never left
-owned by the dead child. The critical windows cannot be reached
-deterministically: any ptrace or breakpoint stop inside them triggers
-the RSEQ abort fixup by design, which is exactly why the fatal-signal
-path needs the exit time fixups (their necessity under identifier reuse
-is established by the TLA+ model).
 ---
  .../selftests/futex/functional/robust_list.c  | 521 ++++++++++++++++++
  1 file changed, 521 insertions(+)
 
 diff --git a/tools/testing/selftests/futex/functional/robust_list.c b/tools/testing/selftests/futex/functional/robust_list.c
-index 190fbc74923b..8380078b1970 100644
+index 83956c8ac589..c8078797ac3f 100644
 --- a/tools/testing/selftests/futex/functional/robust_list.c
 +++ b/tools/testing/selftests/futex/functional/robust_list.c
 @@ -30,6 +30,7 @@
@@ -66,7 +64,7 @@ index 190fbc74923b..8380078b1970 100644
  #include <sys/wait.h>
  
  #define STACK_SIZE (1024 * 1024)
-@@ -1605,4 +1607,523 @@ TEST(test_pending_fault)
+@@ -1706,4 +1708,523 @@ TEST(test_pending_fault)
  	ksft_test_result_pass("%s\n", __func__);
  }
  

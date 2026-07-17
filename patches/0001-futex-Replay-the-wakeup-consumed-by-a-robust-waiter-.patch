@@ -1,0 +1,90 @@
+From 74db3b58e7209ab70d50fb570b342ccb4419e390 Mon Sep 17 00:00:00 2001
+From: Keno Fischer <keno@juliahub.com>
+Date: Fri, 17 Jul 2026 15:42:21 +0000
+Subject: [PATCH 1/8] futex: Replay the wakeup consumed by a robust waiter
+ killed before acquiring
+
+A robust futex unlock stores 0 over the whole futex value - wiping
+FUTEX_WAITERS - and wakes a single waiter. That wakeup is a one-shot
+notification: the protocol relies on its recipient to either acquire
+the futex (and eventually unlock while aware of the remaining
+contention) or re-arm FUTEX_WAITERS before sleeping again.
+
+If the woken waiter is killed before it can do either, and a third
+task re-acquired the futex through the uncontended fast path in the
+meantime, the notification is lost: the exit time robust list walk
+finds the waiter's armed list_op_pending, reads a futex value owned by
+a live task and - correctly - leaves the futex value alone, but it
+also discards the wakeup. The new owner sees no FUTEX_WAITERS when it
+unlocks and wakes nobody. The remaining waiters sleep forever behind a
+free futex:
+
+  A owns the futex, B and C sleep in FUTEX_WAIT
+                                        uval == A | FUTEX_WAITERS
+  A robust unlock: store 0, FUTEX_WAKE(1) wakes B
+                                        uval == 0
+  D fast path acquire: cmpxchg(0 -> D)
+                                        uval == D, no FUTEX_WAITERS
+  B killed before acting on the wakeup
+  B exit walk, pending op: owner D != B -> no action
+  D unlock: no FUTEX_WAITERS -> no wake
+                                        C sleeps forever
+
+Commit ca16d5bee598 ("futex: Prevent robust futex exit race") handles
+the adjacent case where the futex value is still 0 when the walk runs,
+by waking a potential waiter. Extend that handling to the owner
+mismatch case: when a pending non PI lock operation of the dying task
+is discarded because the futex is owned by someone else, wake one
+waiter. The futex value is not touched - the owner is alive - and a
+spurious wakeup is harmless: woken waiters re-evaluate the futex value
+and re-arm FUTEX_WAITERS before sleeping again, which also repairs the
+wiped bit for the remaining sleepers.
+
+The window was found by model checking the robust futex wait/wake
+interactions with TLC. A deterministic selftest is added in the
+following patch.
+
+This patch was developed with the assistance of Claude (an AI
+assistant by Anthropic); the author reviewed, validated and takes
+responsibility for the changes.
+
+Fixes: 0771dfefc9e5 ("[PATCH] lightweight robust futexes: core")
+Signed-off-by: Keno Fischer <keno@juliahub.com>
+---
+ kernel/futex/core.c | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/kernel/futex/core.c b/kernel/futex/core.c
+index 179b26e9c934..9944112d55fd 100644
+--- a/kernel/futex/core.c
++++ b/kernel/futex/core.c
+@@ -1025,8 +1025,25 @@ static int handle_futex_death(u32 __user *uaddr, struct task_struct *curr,
+ 		return 0;
+ 	}
+ 
+-	if (owner != task_pid_vnr(curr))
++	if (owner != task_pid_vnr(curr)) {
++		/*
++		 * The dying task's pending op may have consumed the wake up
++		 * notification of a robust unlock: woken, then killed before
++		 * it could act on it. The robust unlock wiped the whole
++		 * futex value including FUTEX_WAITERS, so the owner which
++		 * re-acquired the lock afterwards will unlock through the
++		 * uncontended fast path and never wake the remaining
++		 * waiters. Nothing may be modified here - the lock has a
++		 * live owner - but a potential waiter must be woken to keep
++		 * the wake up chain alive. The woken waiter re-evaluates
++		 * the futex value and re-arms FUTEX_WAITERS before waiting
++		 * again, so a spurious wake up is harmless.
++		 */
++		if (pending_op && !pi)
++			futex_wake(uaddr, FLAGS_SIZE_32 | FLAGS_SHARED, NULL, 1,
++				   FUTEX_BITSET_MATCH_ANY);
+ 		return 0;
++	}
+ 
+ 	/*
+ 	 * Ok, this dying thread is truly holding a futex
+-- 
+2.54.0
+

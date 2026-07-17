@@ -1,7 +1,7 @@
-From 3e393700fa94ceb01c3db089f60826cf8733c904 Mon Sep 17 00:00:00 2001
+From 0d621100b6fa72f5a2dd29ba52729330e752a312 Mon Sep 17 00:00:00 2001
 From: Keno Fischer <keno@juliahub.com>
 Date: Thu, 16 Jul 2026 08:22:52 +0000
-Subject: [PATCH 5/6] sched/membarrier: Add
+Subject: [PATCH 7/8] sched/membarrier: Add
  MEMBARRIER_CMD_SHARED_EXPEDITED_RSEQ
 
 Cookie based robust futexes with per lock reservation counters require a
@@ -39,13 +39,20 @@ Targeting is doubly gated:
     page as well, which prevents fencing arbitrary read only mapped
     files.
 
-The implementation pins the page through the caller's mapping,
-snapshots each online CPU's current mm with the usual expedited
-membarrier ordering, and then walks the rmap of the pinned folio to
-collect the CPUs which currently run tasks of eligible mms. Those get
-the same RSEQ IPI as MEMBARRIER_CMD_PRIVATE_EXPEDITED_RSEQ. Tasks which
-are not running receive their RSEQ event naturally through the scheduler
-before they can resume user space execution.
+The implementation pins the page through the caller's mapping, snapshots
+each online CPU's current mm with the usual expedited membarrier
+ordering, and then walks the rmap of the pinned folio to collect the
+CPUs which currently run tasks of eligible mms. The walk is restricted
+to the addressed base page: the rmap visits every VMA mapping any page
+of the folio, and on a multi page folio a process mapping only other
+pages of it must not be targeted. Because the VMA count is user space
+controlled and the walk runs under the global membarrier serialization,
+the CPU snapshot is sorted by mm once and each VMA does a binary search
+instead of a linear scan of all online CPUs, bounding the critical
+section to O((VMAs + CPUs) log CPUs). The collected CPUs get the same
+RSEQ IPI as MEMBARRIER_CMD_PRIVATE_EXPEDITED_RSEQ; tasks which are not
+running receive their RSEQ event naturally through the scheduler before
+they can resume user space execution.
 
 The mm snapshot is compared by pointer after the RCU section ends, so a
 stale pointer can cause a spurious RSEQ IPI on a CPU which was
@@ -54,54 +61,22 @@ through the scheduler, which implies the event and barriers anyway.
 
 The eligibility test reads mm->membarrier_state directly during the rmap
 walk, so unlike the other registrations no runqueue state
-synchronization is required; registration is a simple atomic_or plus the
-barrier which orders it against subsequent memory accesses.
+synchronization is required. Registration is a single atomic_or()
+publishing the READY bit, followed by a full barrier: without the
+barrier, a memory access following the syscall return (the start of an
+RSEQ protected sequence) could be performed before READY is visible, and
+a concurrent fence which does not observe READY would incorrectly skip a
+task whose sequence already started. The barrier pairs with the smp_mb()
+at the beginning of membarrier_shared_expedited_rseq(), resolving the
+store-buffering case; the pairing is captured in an LKMM litmus test
+(verified Never with herd7 against tools/memory-model, and Sometimes
+when the barrier is removed).
 
 This series was developed with the assistance of Claude (an AI
 assistant by Anthropic); the author reviewed, validated and takes
 responsibility for the changes.
 
 Signed-off-by: Keno Fischer <keno@juliahub.com>
-
-squash! sched/membarrier: Add MEMBARRIER_CMD_SHARED_EXPEDITED_RSEQ
-
-Publish the registration state with a full barrier after the READY bit:
-atomic_or() does not order anything by itself, so without the barrier a
-memory access following the syscall return (the start of an RSEQ
-protected sequence) could be performed before READY is visible, and a
-concurrent fence which does not observe READY would incorrectly skip a
-task whose sequence already started. The barrier pairs with the
-smp_mb() at the beginning of membarrier_shared_expedited_rseq(),
-resolving the store-buffering case.
-
-squash! sched/membarrier: Add MEMBARRIER_CMD_SHARED_EXPEDITED_RSEQ
-
-Add an LKMM litmus test (verified Never with herd7 7.58 against
-tools/memory-model) for the READY publication pairing with the fence's
-leading smp_mb(): the fence may skip a task only if that task's
-subsequent RSEQ sequence observes everything the fence caller wrote
-before fencing. Without the smp_mb__after_atomic() the store-buffering
-outcome is observable (Sometimes).
-
-squash! sched/membarrier: Add MEMBARRIER_CMD_SHARED_EXPEDITED_RSEQ
-
-Restrict the fence to the addressed base page (issue #24): the rmap
-walk visits every VMA mapping any page of the folio, so on a multi page
-folio a process mapping only other pages would have been targeted.
-Filter the VMAs against the pinned page's object offset.
-
-Bound the work under the global membarrier serialization (issue #25):
-the VMA count is user space controlled, so the per-VMA linear scan of
-all online CPUs allowed unprivileged callers to inflate the critical
-section to O(VMAs x CPUs). Snapshot (mm, cpu) pairs once, sort by mm
-and binary search per VMA: O((VMAs + CPUs) log CPUs).
-
-squash! sched/membarrier: Add MEMBARRIER_CMD_SHARED_EXPEDITED_RSEQ
-
-Complete the rmap walk rework (issues 24/25): the previous squash was
-generated from a partially applied edit and kept the old per-VMA
-all-CPU scan and full-folio targeting in the walk callback while
-already snapshotting sorted (mm, cpu) pairs in the caller.
 ---
  Documentation/litmus-tests/README             |  11 +
  .../membarrier-shared-rseq-ready.litmus       |  49 ++++

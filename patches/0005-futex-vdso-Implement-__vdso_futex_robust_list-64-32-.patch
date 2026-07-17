@@ -1,7 +1,7 @@
-From 12e89d7d9aab5ba1cce41680e9cbff8cf03501a9 Mon Sep 17 00:00:00 2001
+From afa1417eab1f3544a0cc110ffe2276d49be64187 Mon Sep 17 00:00:00 2001
 From: Keno Fischer <keno@juliahub.com>
 Date: Thu, 16 Jul 2026 08:22:29 +0000
-Subject: [PATCH 3/6] futex/vdso: Implement
+Subject: [PATCH 5/8] futex/vdso: Implement
  __vdso_futex_robust_list{64,32}_cmpxchg_rseq()
 
 Cookie based robust futexes (ROBUST_LIST_COOKIE) require user space to
@@ -78,10 +78,12 @@ with guarantees which pure user space code cannot provide:
     checking the counter protocol with TLC: the first during model
     construction, the second as a genuine model checker counterexample.
 
-On success the pending op stays armed with the cookie visible in both
-the lock word and the entry until the caller has queued the entry in the
-robust list, exactly like the list_op_pending protocol of the original
-robust list.
+On success the reserved cookie is in the lock word and the pending op
+stays armed - attributed through the task private list_op_pending_cookie
+- until the caller has written the entry cookie and queued the entry in
+the robust list, exactly like the list_op_pending protocol of the
+original robust list. The shared entry cookie is only ever written after
+success: a contender must never overwrite a live owner's entry cookie.
 
 The distinction whether a fixup is required is based on the Zero
 Flag. The rseq_cs check leaves ZF = 0 when it proceeds, MOV does not
@@ -98,9 +100,15 @@ kernel checks whether the IP is inside the VDSO cmpxchg critical section
 and applies the fixup. This covers preemption and interrupt induced
 events via the exit to user path, RSEQ IPIs from membarrier() and signal
 delivery via rseq_signal_deliver(). The clearing of the pending op via
-put_user() is best effort: if it fails due to a disabled pagefault
-handler, the abort landing pad in the VDSO disarms the pending op again
-in user space.
+put_user() is best effort for the RSEQ event cases: if it fails due to a
+disabled pagefault handler, the abort landing pad in the VDSO disarms
+the pending op again in user space. The signal delivery fixup cannot
+rely on the landing pad: a signal handler which never returns through it
+(siglongjmp, thread exit) would leave the stale pending op armed, and
+the pending slot can be in a different page than the signal frame, so a
+failing disarm does not imply that the frame setup fails as well. If the
+signal time disarm fails, the robust list registration is dropped
+instead (fail closed).
 
 The pending op pointer is in DX in all build modes, so the kernel side
 retrieval is uniform. As with the try_unlock functions two entry points
@@ -117,22 +125,6 @@ assistant by Anthropic); the author reviewed, validated and takes
 responsibility for the changes.
 
 Signed-off-by: Keno Fischer <keno@juliahub.com>
-
-squash! futex/vdso: Implement __vdso_futex_robust_list{64,32}_cmpxchg_rseq()
-
-Fail closed when the signal time fixup cannot disarm the pending op
-(issue #23): a signal handler which never returns through the abort
-landing pad (siglongjmp, thread exit) would leave the stale pending op
-armed, and the pending slot can be in a different page than the signal
-frame, so a failing disarm does not imply that the frame setup fails as
-well. Use futex_robust_list_clear_pending(), which drops the robust
-list registration when the slot cannot be cleared.
-
-Correct the caller contract documentation (issue #32): the reserved
-identifier goes into the task private list_op_pending_cookie before the
-call, and into the shared entry cookie only after success - a contender
-must never overwrite a live owner's entry cookie. Also fix the missing
-brace in the pseudo code.
 ---
  Documentation/locking/robust-futex-ABI.rst |   5 +-
  arch/x86/entry/vdso/common/vfutex.c        | 126 +++++++++++++++++++++

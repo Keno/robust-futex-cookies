@@ -1,7 +1,7 @@
-From 1210f230aa7506e1583ca888361c1f8dd666ea60 Mon Sep 17 00:00:00 2001
+From 4094e1ba15a1ddadc2859bd07e7c37cb40d02ea6 Mon Sep 17 00:00:00 2001
 From: Keno Fischer <keno@juliahub.com>
 Date: Thu, 16 Jul 2026 08:23:02 +0000
-Subject: [PATCH 6/6] selftests/membarrier: Add tests for
+Subject: [PATCH 8/8] selftests/membarrier: Add tests for
  MEMBARRIER_CMD_SHARED_EXPEDITED_RSEQ
 
 Exercise the shared RSEQ fence:
@@ -12,7 +12,10 @@ Exercise the shared RSEQ fence:
 
   - A registered process spinning in an RSEQ critical section on a
     shared writable page is aborted by a fence on that page issued by
-    another process.
+    another process. The test cannot pass without fencing: aborts
+    observed before the first fence (startup preemptions or migrations)
+    are discarded, at least one fence is always issued, and only an
+    abort observed after a fence satisfies the test.
 
   - A process which did not register is not disturbed, even though it
     maps the page. As every RSEQ event aborts the spinner, background
@@ -22,22 +25,15 @@ Exercise the shared RSEQ fence:
   - A registered process which does not map the fenced page is not
     disturbed.
 
+The RSEQ spin loop is x86-64 assembly and the generic membarrier
+Makefile is built on every architecture, so the new test is gated on
+x86-64 at build time.
+
 This series was developed with the assistance of Claude (an AI
 assistant by Anthropic); the author reviewed, validated and takes
 responsibility for the changes.
 
 Signed-off-by: Keno Fischer <keno@juliahub.com>
-
-squash! selftests/membarrier: Add tests for MEMBARRIER_CMD_SHARED_EXPEDITED_RSEQ
-
-Gate the build on x86-64 (issue #29): the RSEQ spin loop is x86-64
-assembly, and the generic membarrier Makefile is built on every
-architecture.
-
-Make the positive fence test unable to pass without fencing (issue
-30): aborts observed before the first fence (startup preemptions or
-migrations) are discarded, at least one fence is always issued, and
-only an abort observed after a fence satisfies the test.
 ---
  tools/testing/selftests/membarrier/.gitignore |   1 +
  tools/testing/selftests/membarrier/Makefile   |   6 +
