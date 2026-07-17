@@ -302,7 +302,7 @@ KernelCleanup(t) ==
                     ELSE enq[t] /\ word.own # 0 /\ word.own = ecookie
        IN IF match
           THEN /\ word' = [own |-> 0, od |-> TRUE]
-               /\ corrupt' = corrupt \/ (owner # NONE /\ owner # t)
+               /\ corrupt' = (corrupt \/ (owner # NONE /\ owner # t))
                /\ owner' = IF owner = t THEN NONE ELSE owner
           ELSE UNCHANGED <<word, corrupt, owner>>
     /\ UNCHANGED <<ctr, qgen, ecookie, pc, alive, guard, res, rgen, pending,
