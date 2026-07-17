@@ -68,7 +68,7 @@ artifact provenance).
 | MCExplicitLeaseOrder  | as OK but the lease slot walked before held locks | NoCorruption **violated** (reused cookie + misattributed second death lets a live re-acquirer be wiped by the first walk's stale entry) |
 | MCExplicitTid         | classic TID protocol, TID collision across pidns  | NoCorruption **violated** (the original kernel bug) |
 | MCExplicitOldABI      | pending op attributed via shared entry cookie     | NoCorruption **violated** (why list_op_pending_cookie exists) |
-| MCCounterOK10         | final counter protocol (3 threads, MaxCtr=10: a full cookie wrap + margin) | PASS, exhaustive: 3,511,823,398 states generated, 821,073,870 distinct |
+| MCCounterOK10         | final counter protocol (3 threads, MaxCtr=10: a full cookie wrap + margin) | PASS, exhaustive: 3.51e9 generated / 8.21e8 distinct; re-confirmed on the pinned jar after the corrupt-ghost precedence fix (40min, 24 workers) |
 | MCCounterOKLive       | final counter protocol (2 threads, MaxCtr=12, + liveness) | PASS (incl. Recovery; 18.9M generated / 6.6M distinct) |
 | MCCounterOK           | as OK10 but MaxCtr=12                             | no violation in 6.5e9 generated / 1.66e9 distinct states (search stopped before exhaustion; OK10 is the completed exhaustive bound) |
 | MCCounterNoExitFixup  | no exit time pending fixups (2 threads)           | NoCorruption **violated** (fatal-signal death windows; the fence cannot reach a dead task) |
