@@ -1,0 +1,33 @@
+C membarrier-shared-rseq-ready-broken
+
+(*
+ * Result: Sometimes
+ *
+ * Validation twin of membarrier-shared-rseq-ready.litmus: the reviewed
+ * (broken) registration published READY with a plain atomic_or() and
+ * no ordering against the task's subsequent accesses. The forbidden
+ * outcome - the fence skips the mm (r1 == 0) while the already started
+ * reservation missed the fence caller's generation write (r0 == 0) -
+ * is then allowed on weakly ordered architectures.
+ *)
+
+{}
+
+P0(atomic_t *state, int *gen)
+{
+	int r0;
+
+	atomic_or(1, state);
+	r0 = READ_ONCE(*gen);
+}
+
+P1(atomic_t *state, int *gen)
+{
+	int r1;
+
+	WRITE_ONCE(*gen, 1);
+	smp_mb();
+	r1 = atomic_read(state);
+}
+
+exists (0:r0=0 /\ 1:r1=0)

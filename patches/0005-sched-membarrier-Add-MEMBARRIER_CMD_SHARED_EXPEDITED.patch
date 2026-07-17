@@ -1,4 +1,4 @@
-From 86d5b42589d373193b2b10a7e1f14a25bbd2df8d Mon Sep 17 00:00:00 2001
+From 15a08f392f3de8c35a23f10f20d8f782cb869e51 Mon Sep 17 00:00:00 2001
 From: Keno Fischer <keno@juliahub.com>
 Date: Thu, 16 Jul 2026 08:22:52 +0000
 Subject: [PATCH 5/6] sched/membarrier: Add
@@ -70,13 +70,102 @@ concurrent fence which does not observe READY would incorrectly skip a
 task whose sequence already started. The barrier pairs with the
 smp_mb() at the beginning of membarrier_shared_expedited_rseq(),
 resolving the store-buffering case.
----
- include/linux/sched/mm.h        |   2 +
- include/linux/syscalls.h        |   3 +-
- include/uapi/linux/membarrier.h |  34 +++++
- kernel/sched/membarrier.c       | 215 +++++++++++++++++++++++++++++++-
- 4 files changed, 250 insertions(+), 4 deletions(-)
 
+squash! sched/membarrier: Add MEMBARRIER_CMD_SHARED_EXPEDITED_RSEQ
+
+Add an LKMM litmus test (verified Never with herd7 7.58 against
+tools/memory-model) for the READY publication pairing with the fence's
+leading smp_mb(): the fence may skip a task only if that task's
+subsequent RSEQ sequence observes everything the fence caller wrote
+before fencing. Without the smp_mb__after_atomic() the store-buffering
+outcome is observable (Sometimes).
+---
+ Documentation/litmus-tests/README             |  11 +
+ .../membarrier-shared-rseq-ready.litmus       |  49 ++++
+ include/linux/sched/mm.h                      |   2 +
+ include/linux/syscalls.h                      |   3 +-
+ include/uapi/linux/membarrier.h               |  34 +++
+ kernel/sched/membarrier.c                     | 215 +++++++++++++++++-
+ 6 files changed, 310 insertions(+), 4 deletions(-)
+ create mode 100644 Documentation/litmus-tests/membarrier/membarrier-shared-rseq-ready.litmus
+
+diff --git a/Documentation/litmus-tests/README b/Documentation/litmus-tests/README
+index 6c666f3422ea..8cf76a09c4b1 100644
+--- a/Documentation/litmus-tests/README
++++ b/Documentation/litmus-tests/README
+@@ -38,6 +38,17 @@ cmpxchg-fail-unordered-2.litmus
+     acquire operation.
+ 
+ 
++membarrier (/membarrier directory)
++----------------------------------
++
++membarrier-shared-rseq-ready.litmus
++    Test that MEMBARRIER_CMD_REGISTER_SHARED_EXPEDITED_RSEQ's READY
++    publication (a non-value-returning atomic_or() followed by
++    smp_mb__after_atomic()) pairs with the smp_mb() at the beginning
++    of a concurrent MEMBARRIER_CMD_SHARED_EXPEDITED_RSEQ fence: the
++    fence may skip a task only if that task's subsequent RSEQ
++    sequence observes everything the fence caller wrote beforehand.
++
+ locking (/locking directory)
+ ----------------------------
+ 
+diff --git a/Documentation/litmus-tests/membarrier/membarrier-shared-rseq-ready.litmus b/Documentation/litmus-tests/membarrier/membarrier-shared-rseq-ready.litmus
+new file mode 100644
+index 000000000000..5a346e60c1bc
+--- /dev/null
++++ b/Documentation/litmus-tests/membarrier/membarrier-shared-rseq-ready.litmus
+@@ -0,0 +1,49 @@
++C membarrier-shared-rseq-ready
++
++(*
++ * Result: Never
++ *
++ * MEMBARRIER_CMD_REGISTER_SHARED_EXPEDITED_RSEQ vs a concurrent
++ * MEMBARRIER_CMD_SHARED_EXPEDITED_RSEQ fence (store buffering).
++ *
++ * P0 is the registering task: it publishes the READY bit in
++ * mm->membarrier_state (modeled by "state") and, back in user space,
++ * begins an RSEQ protected cookie reservation whose first step reads
++ * the fence caller's generation state (modeled by "gen").
++ *
++ * P1 is the fence caller: it writes the new generation, then fences;
++ * the fence reads mm->membarrier_state and skips the mm if READY is
++ * not set (r1 == 0).
++ *
++ * The fence may only skip a task if that task's subsequent reservation
++ * observes everything the fence caller wrote before fencing: r1 == 0
++ * (P1 skipped P0) and r0 == 0 (P0's reservation missed the new
++ * generation) must not both happen.
++ *
++ * The smp_mb__after_atomic() is required: atomic_or() does not return
++ * a value and therefore orders nothing by itself. It pairs with the
++ * smp_mb() at the beginning of membarrier_shared_expedited_rseq()
++ * (via guard(mb)).
++ *)
++
++{}
++
++P0(atomic_t *state, int *gen)
++{
++	int r0;
++
++	atomic_or(1, state);
++	smp_mb__after_atomic();
++	r0 = READ_ONCE(*gen);
++}
++
++P1(atomic_t *state, int *gen)
++{
++	int r1;
++
++	WRITE_ONCE(*gen, 1);
++	smp_mb();
++	r1 = atomic_read(state);
++}
++
++exists (0:r0=0 /\ 1:r1=0)
 diff --git a/include/linux/sched/mm.h b/include/linux/sched/mm.h
 index 95d0040df584..8741d4d794b0 100644
 --- a/include/linux/sched/mm.h

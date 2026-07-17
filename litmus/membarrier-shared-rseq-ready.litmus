@@ -1,0 +1,49 @@
+C membarrier-shared-rseq-ready
+
+(*
+ * Result: Never
+ *
+ * MEMBARRIER_CMD_REGISTER_SHARED_EXPEDITED_RSEQ vs a concurrent
+ * MEMBARRIER_CMD_SHARED_EXPEDITED_RSEQ fence (store buffering).
+ *
+ * P0 is the registering task: it publishes the READY bit in
+ * mm->membarrier_state (modeled by "state") and, back in user space,
+ * begins an RSEQ protected cookie reservation whose first step reads
+ * the fence caller's generation state (modeled by "gen").
+ *
+ * P1 is the fence caller: it writes the new generation, then fences;
+ * the fence reads mm->membarrier_state and skips the mm if READY is
+ * not set (r1 == 0).
+ *
+ * The fence may only skip a task if that task's subsequent reservation
+ * observes everything the fence caller wrote before fencing: r1 == 0
+ * (P1 skipped P0) and r0 == 0 (P0's reservation missed the new
+ * generation) must not both happen.
+ *
+ * The smp_mb__after_atomic() is required: atomic_or() does not return
+ * a value and therefore orders nothing by itself. It pairs with the
+ * smp_mb() at the beginning of membarrier_shared_expedited_rseq()
+ * (via guard(mb)).
+ *)
+
+{}
+
+P0(atomic_t *state, int *gen)
+{
+	int r0;
+
+	atomic_or(1, state);
+	smp_mb__after_atomic();
+	r0 = READ_ONCE(*gen);
+}
+
+P1(atomic_t *state, int *gen)
+{
+	int r1;
+
+	WRITE_ONCE(*gen, 1);
+	smp_mb();
+	r1 = atomic_read(state);
+}
+
+exists (0:r0=0 /\ 1:r1=0)

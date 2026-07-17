@@ -1,6 +1,6 @@
-From b48e689991cbf075f6d28574cc45ed45043cd780 Mon Sep 17 00:00:00 2001
+From 2962828916b516f2caa8e2019e8452c831a1c74c Mon Sep 17 00:00:00 2001
 From: Keno Fischer <Keno@users.noreply.github.com>
-Date: Fri, 17 Jul 2026 04:35:06 +0000
+Date: Fri, 17 Jul 2026 04:57:37 +0000
 Subject: [PATCH 0/6] futex: PID namespace agnostic robust futexes via owner cookies
 
 Robust futexes identify the lock owner by storing the owner's TID in the
@@ -103,6 +103,8 @@ Keno Fischer (6):
   selftests/membarrier: Add tests for
     MEMBARRIER_CMD_SHARED_EXPEDITED_RSEQ
 
+ Documentation/litmus-tests/README             |   11 +
+ .../membarrier-shared-rseq-ready.litmus       |   49 +
  Documentation/locking/robust-futex-ABI.rst    |   85 ++
  arch/x86/entry/vdso/common/vfutex.c           |  126 ++
  arch/x86/entry/vdso/vdso32/vdso32.lds.S       |    1 +
@@ -129,7 +131,8 @@ Keno Fischer (6):
  tools/testing/selftests/membarrier/.gitignore |    1 +
  tools/testing/selftests/membarrier/Makefile   |    3 +-
  .../membarrier/membarrier_shared_rseq_test.c  |  416 ++++++
- 26 files changed, 2687 insertions(+), 43 deletions(-)
+ 28 files changed, 2747 insertions(+), 43 deletions(-)
+ create mode 100644 Documentation/litmus-tests/membarrier/membarrier-shared-rseq-ready.litmus
  create mode 100644 tools/testing/selftests/membarrier/membarrier_shared_rseq_test.c
 
 -- 
