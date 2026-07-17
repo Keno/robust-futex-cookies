@@ -1,4 +1,4 @@
-From b4b4edb38b34c6edc8a72dc9a35824caa02a2546 Mon Sep 17 00:00:00 2001
+From f7581719221ad6005735e926895c893393812a4d Mon Sep 17 00:00:00 2001
 From: Keno Fischer <keno@juliahub.com>
 Date: Thu, 16 Jul 2026 08:22:51 +0000
 Subject: [PATCH 4/6] selftests/futex: Add tests for the VDSO robust cmpxchg
@@ -28,14 +28,22 @@ their own.
 Signed-off-by: Keno Fischer <keno@juliahub.com>
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
 ---
- .../selftests/futex/functional/robust_list.c  | 264 ++++++++++++++++++
- 1 file changed, 264 insertions(+)
+ .../selftests/futex/functional/robust_list.c  | 410 ++++++++++++++++++
+ 1 file changed, 410 insertions(+)
 
 diff --git a/tools/testing/selftests/futex/functional/robust_list.c b/tools/testing/selftests/futex/functional/robust_list.c
-index f4ceab854ca2..1ce653da8c3b 100644
+index f4ceab854ca2..3fe6623f8315 100644
 --- a/tools/testing/selftests/futex/functional/robust_list.c
 +++ b/tools/testing/selftests/futex/functional/robust_list.c
-@@ -37,6 +37,7 @@
+@@ -30,6 +30,7 @@
+ #include <dlfcn.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include <sched.h>
+ #include <signal.h>
+ #include <stdint.h>
+ #include <stdatomic.h>
+@@ -37,6 +38,7 @@
  #include <stddef.h>
  #include <sys/auxv.h>
  #include <sys/mman.h>
@@ -43,7 +51,7 @@ index f4ceab854ca2..1ce653da8c3b 100644
  #include <sys/wait.h>
  
  #define STACK_SIZE (1024 * 1024)
-@@ -1249,4 +1250,267 @@ TEST(test_pidns_cookie)
+@@ -1249,4 +1251,412 @@ TEST(test_pidns_cookie)
  	pidns_collision_test(_metadata, true);
  }
  
@@ -58,11 +66,12 @@ index f4ceab854ca2..1ce653da8c3b 100644
 +
 +#define RSEQ_SIG	0x53053053
 +
-+/* Weak references for glibc >= 2.35 which registers rseq on its own */
-+extern __attribute__((weak)) ptrdiff_t __rseq_offset;
-+extern __attribute__((weak)) unsigned int __rseq_size;
-+
-+static __thread struct rseq_abi {
++/*
++ * rseq area owned by the libc-less worker thread (see run_libcless()).
++ * Not __thread: only the single worker thread ever registers or touches
++ * it, so a plain object avoids any dependence on libc TLS.
++ */
++static struct rseq_abi {
 +	uint32_t cpu_id_start;
 +	uint32_t cpu_id;
 +	uint64_t rseq_cs;
@@ -88,30 +97,71 @@ index f4ceab854ca2..1ce653da8c3b 100644
 +	.post_commit_offset = 0,
 +};
 +
-+static void *thread_pointer(void)
-+{
-+	void *tp;
++/*
++ * Run @fn(@arg) on a "libc-less" thread: a raw clone(CLONE_VM|CLONE_THREAD)
++ * task the C library never set up, so the kernel starts it with rseq ==
++ * NULL and no robust list. It can therefore register and own rseq
++ * regardless of the libc version (modern glibc auto-registers rseq on
++ * every thread it creates, which makes a second registration of a
++ * different rseq area fail with EINVAL). The rseq critical section and the
++ * vDSO cmpxchg must run on the task whose kernel rseq we control, which is
++ * exactly this worker; the caller collects results and asserts on them.
++ * The thread shares the address space and is joined via a
++ * CLONE_CHILD_CLEARTID futex. Returns @fn's value or a negative errno.
++ */
++struct bare_ctx {
++	int (*fn)(void *);
++	void *arg;
++	int ret;
++};
 +
-+#if defined(__x86_64__)
-+	asm("mov %%fs:0, %0" : "=r" (tp));
-+#elif defined(__i386__)
-+	asm("mov %%gs:0, %0" : "=r" (tp));
-+#else
-+	tp = __builtin_thread_pointer();
-+#endif
-+	return tp;
++static int bare_entry(void *p)
++{
++	struct bare_ctx *c = p;
++
++	c->ret = c->fn(c->arg);
++	return 0;
 +}
 +
-+static struct rseq_abi *register_rseq(void)
++static int run_libcless(int (*fn)(void *), void *arg)
 +{
-+	if (!syscall(SYS_rseq, &own_rseq, sizeof(own_rseq), 0, RSEQ_SIG))
-+		return &own_rseq;
++	const size_t sz = 256 * 1024;
++	struct bare_ctx ctx = { fn, arg, 0 };
++	volatile pid_t ctid = 1;
++	char *stack;
++	long tid;
 +
-+	if (errno == EBUSY && &__rseq_offset && __rseq_size) {
-+		return (struct rseq_abi *)((char *)thread_pointer() +
-+					   __rseq_offset);
++	stack = mmap(NULL, sz, PROT_READ | PROT_WRITE,
++		     MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
++	if (stack == MAP_FAILED)
++		return -errno;
++
++	tid = clone(bare_entry, stack + sz,
++		    CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND |
++		    CLONE_THREAD | CLONE_CHILD_CLEARTID,
++		    &ctx, NULL, NULL, (pid_t *)&ctid);
++	if (tid < 0) {
++		int e = errno;
++
++		munmap(stack, sz);
++		return -e;
 +	}
-+	return NULL;
++
++	for (;;) {
++		pid_t v = __atomic_load_n(&ctid, __ATOMIC_ACQUIRE);
++
++		if (!v)
++			break;
++		syscall(SYS_futex, &ctid, FUTEX_WAIT, v, NULL, NULL, 0);
++	}
++	munmap(stack, sz);
++	return ctx.ret;
++}
++
++/* Register @own_rseq on the calling (libc-less) worker. */
++static int worker_register_rseq(void)
++{
++	return syscall(SYS_rseq, &own_rseq, sizeof(own_rseq), 0, RSEQ_SIG);
 +}
 +
 +FIXTURE(vdso_cmpxchg)
@@ -147,9 +197,12 @@ index f4ceab854ca2..1ce653da8c3b 100644
 +	if (!self->vdso)
 +		SKIP(return, "%s not found in vDSO", variant->vdso_name);
 +
-+	self->rseq = register_rseq();
-+	if (!self->rseq)
-+		SKIP(return, "Cannot register or locate rseq TLS area");
++	/*
++	 * rseq is registered and owned by the libc-less worker thread that
++	 * each test dispatches its rseq/vDSO work to (self->rseq is set
++	 * there); nothing rseq-related runs on this harness thread.
++	 */
++	self->rseq = NULL;
 +}
 +
 +FIXTURE_TEARDOWN(vdso_cmpxchg) {}
@@ -189,21 +242,65 @@ index f4ceab854ca2..1ce653da8c3b 100644
 +#define TEST_PENDING	0x1000ULL
 +
 +/*
++ * A single cmpxchg, executed on the libc-less rseq worker: arm rseq_cs to
++ * @arm, run the vDSO helper and report back the return value and the
++ * resulting lock/pending words for the harness thread to assert on.
++ */
++struct cmpxchg_io {
++	FIXTURE_DATA(vdso_cmpxchg) *self;
++	const FIXTURE_VARIANT(vdso_cmpxchg) *variant;
++	uint64_t arm;			/* rseq_cs value to arm before the op */
++	uint64_t pending;
++	uint32_t lock_init;
++	uint32_t expect;
++	uint32_t set;
++	int rseq_ok;
++	uint32_t ret;
++	uint32_t lock_final;
++	uint64_t pending_final;
++};
++
++static int cmpxchg_once(void *p)
++{
++	struct cmpxchg_io *io = p;
++	_Atomic(uint32_t) lock = io->lock_init;
++
++	if (worker_register_rseq()) {
++		io->rseq_ok = 0;
++		return 0;
++	}
++	io->rseq_ok = 1;
++	io->self->rseq = &own_rseq;
++
++	pend_slot.u64 = 0;
++	own_rseq.rseq_cs = io->arm;
++	io->ret = do_cmpxchg(io->self, io->variant, io->pending, &lock,
++			     io->expect, io->set);
++	own_rseq.rseq_cs = 0;
++	io->lock_final = atomic_load(&lock);
++	io->pending_final = get_pending(io->variant);
++	pend_slot.u64 = 0;
++	return 0;
++}
++
++/*
 + * Without an armed rseq_cs the function must fail and leave everything
 + * alone.
 + */
 +TEST_F(vdso_cmpxchg, no_rseq_cs)
 +{
-+	_Atomic(uint32_t) lock = 0;
-+	uint32_t ret;
++	struct cmpxchg_io io = {
++		.self = self, .variant = variant, .arm = 0,
++		.pending = TEST_PENDING, .lock_init = 0, .expect = 0,
++		.set = TEST_COOKIE,
++	};
 +
-+	pend_slot.u64 = 0;
-+	self->rseq->rseq_cs = 0;
-+
-+	ret = do_cmpxchg(self, variant, TEST_PENDING, &lock, 0, TEST_COOKIE);
-+	ASSERT_EQ(ret, 0);
-+	ASSERT_EQ(atomic_load(&lock), 0);
-+	ASSERT_EQ(get_pending(variant), 0);
++	ASSERT_EQ(run_libcless(cmpxchg_once, &io), 0);
++	if (!io.rseq_ok)
++		SKIP(return, "Cannot register rseq on the libc-less worker");
++	ASSERT_EQ(io.ret, 0);
++	ASSERT_EQ(io.lock_final, 0);
++	ASSERT_EQ(io.pending_final, 0);
 +}
 +
 +/*
@@ -212,19 +309,18 @@ index f4ceab854ca2..1ce653da8c3b 100644
 + */
 +TEST_F(vdso_cmpxchg, uncontended)
 +{
-+	_Atomic(uint32_t) lock = 0;
-+	uint32_t ret;
++	struct cmpxchg_io io = {
++		.self = self, .variant = variant, .arm = (uintptr_t)&empty_cs,
++		.pending = TEST_PENDING, .lock_init = 0, .expect = 0,
++		.set = TEST_COOKIE,
++	};
 +
-+	pend_slot.u64 = 0;
-+	self->rseq->rseq_cs = (uintptr_t)&empty_cs;
-+
-+	ret = do_cmpxchg(self, variant, TEST_PENDING, &lock, 0, TEST_COOKIE);
-+	self->rseq->rseq_cs = 0;
-+
-+	ASSERT_EQ(ret, 1);
-+	ASSERT_EQ(atomic_load(&lock), TEST_COOKIE);
-+	ASSERT_EQ(get_pending(variant), TEST_PENDING);
-+	pend_slot.u64 = 0;
++	ASSERT_EQ(run_libcless(cmpxchg_once, &io), 0);
++	if (!io.rseq_ok)
++		SKIP(return, "Cannot register rseq on the libc-less worker");
++	ASSERT_EQ(io.ret, 1);
++	ASSERT_EQ(io.lock_final, TEST_COOKIE);
++	ASSERT_EQ(io.pending_final, TEST_PENDING);
 +}
 +
 +/*
@@ -232,18 +328,18 @@ index f4ceab854ca2..1ce653da8c3b 100644
 + */
 +TEST_F(vdso_cmpxchg, contended)
 +{
-+	_Atomic(uint32_t) lock = 0xdead0001;
-+	uint32_t ret;
++	struct cmpxchg_io io = {
++		.self = self, .variant = variant, .arm = (uintptr_t)&empty_cs,
++		.pending = TEST_PENDING, .lock_init = 0xdead0001, .expect = 0,
++		.set = TEST_COOKIE,
++	};
 +
-+	pend_slot.u64 = 0;
-+	self->rseq->rseq_cs = (uintptr_t)&empty_cs;
-+
-+	ret = do_cmpxchg(self, variant, TEST_PENDING, &lock, 0, TEST_COOKIE);
-+	self->rseq->rseq_cs = 0;
-+
-+	ASSERT_EQ(ret, 0);
-+	ASSERT_EQ(atomic_load(&lock), 0xdead0001);
-+	ASSERT_EQ(get_pending(variant), 0);
++	ASSERT_EQ(run_libcless(cmpxchg_once, &io), 0);
++	if (!io.rseq_ok)
++		SKIP(return, "Cannot register rseq on the libc-less worker");
++	ASSERT_EQ(io.ret, 0);
++	ASSERT_EQ(io.lock_final, 0xdead0001);
++	ASSERT_EQ(io.pending_final, 0);
 +}
 +
 +static volatile sig_atomic_t sig_count;
@@ -253,12 +349,89 @@ index f4ceab854ca2..1ce653da8c3b 100644
 +	sig_count++;
 +}
 +
++struct stress_io {
++	FIXTURE_DATA(vdso_cmpxchg) *self;
++	const FIXTURE_VARIANT(vdso_cmpxchg) *variant;
++	int rseq_ok;
++	int violated;
++	unsigned long success;
++	unsigned long aborts;
++};
++
++/*
++ * The stress loop runs on the libc-less rseq worker (the task whose rseq
++ * the kernel checks), so it must be the one that receives SIGALRM: the
++ * harness thread blocks SIGALRM before spawning it, and the worker
++ * unblocks it here. Per-iteration invariants are checked inline and folded
++ * into @violated; the harness thread asserts on the summary.
++ */
++static int stress_body(void *p)
++{
++	struct stress_io *io = p;
++	struct itimerval it = {
++		.it_interval = { .tv_usec = 200 },
++		.it_value = { .tv_usec = 200 },
++	};
++	struct sigaction sa = { .sa_handler = sigalrm_handler };
++	_Atomic(uint32_t) lock = 0;
++	sigset_t alrm;
++
++	sigemptyset(&alrm);
++	sigaddset(&alrm, SIGALRM);
++	sigprocmask(SIG_UNBLOCK, &alrm, NULL);
++
++	if (worker_register_rseq()) {
++		io->rseq_ok = 0;
++		return 0;
++	}
++	io->rseq_ok = 1;
++	io->self->rseq = &own_rseq;
++
++	if (sigaction(SIGALRM, &sa, NULL) || setitimer(ITIMER_REAL, &it, NULL))
++		return 1;
++
++	sig_count = 0;
++	while (sig_count < 2000) {
++		uint32_t ret;
++
++		pend_slot.u64 = 0;
++		own_rseq.rseq_cs = (uintptr_t)&empty_cs;
++		ret = do_cmpxchg(io->self, io->variant, TEST_PENDING, &lock, 0,
++				 TEST_COOKIE);
++		own_rseq.rseq_cs = 0;
++
++		if (ret) {
++			io->success++;
++			if (atomic_load(&lock) != TEST_COOKIE ||
++			    get_pending(io->variant) != TEST_PENDING) {
++				io->violated = 1;
++				break;
++			}
++			/* Release the lock */
++			atomic_store(&lock, 0);
++			pend_slot.u64 = 0;
++		} else {
++			io->aborts++;
++			if (get_pending(io->variant) != 0 ||
++			    atomic_load(&lock) != 0) {
++				io->violated = 1;
++				break;
++			}
++		}
++	}
++
++	it.it_interval.tv_usec = 0;
++	it.it_value.tv_usec = 0;
++	setitimer(ITIMER_REAL, &it, NULL);
++	return 0;
++}
++
 +/*
 + * Signal storm stress: while SIGALRM fires at high frequency, acquire
 + * and release the lock in a tight loop. Signals landing between arming
 + * rseq_cs and the cmpxchg abort the operation via the kernel fixup.
 + *
-+ * Invariants checked on every iteration:
++ * Invariants checked on every iteration (see stress_body()):
 + *
 + *  - Success implies the lock word contains the cookie (an abort fixup
 + *    must never be applied to a committed operation).
@@ -268,46 +441,26 @@ index f4ceab854ca2..1ce653da8c3b 100644
 + */
 +TEST_F(vdso_cmpxchg, signal_abort_stress)
 +{
-+	struct itimerval it = {
-+		.it_interval = { .tv_usec = 200 },
-+		.it_value = { .tv_usec = 200 },
-+	};
-+	struct sigaction sa = { .sa_handler = sigalrm_handler };
-+	_Atomic(uint32_t) lock = 0;
-+	unsigned long success = 0, aborts = 0;
-+	uint32_t ret;
++	struct stress_io io = { .self = self, .variant = variant };
++	sigset_t alrm, old;
++	int r;
 +
-+	ASSERT_EQ(sigaction(SIGALRM, &sa, NULL), 0);
-+	ASSERT_EQ(setitimer(ITIMER_REAL, &it, NULL), 0);
++	/* Keep SIGALRM off this thread so it reaches the worker instead. */
++	sigemptyset(&alrm);
++	sigaddset(&alrm, SIGALRM);
++	ASSERT_EQ(sigprocmask(SIG_BLOCK, &alrm, &old), 0);
 +
-+	sig_count = 0;
-+	while (sig_count < 2000) {
-+		pend_slot.u64 = 0;
-+		self->rseq->rseq_cs = (uintptr_t)&empty_cs;
-+		ret = do_cmpxchg(self, variant, TEST_PENDING, &lock, 0, TEST_COOKIE);
-+		self->rseq->rseq_cs = 0;
++	r = run_libcless(stress_body, &io);
++	sigprocmask(SIG_SETMASK, &old, NULL);
 +
-+		if (ret) {
-+			success++;
-+			ASSERT_EQ(atomic_load(&lock), TEST_COOKIE);
-+			ASSERT_EQ(get_pending(variant), TEST_PENDING);
-+			/* Release the lock */
-+			atomic_store(&lock, 0);
-+			pend_slot.u64 = 0;
-+		} else {
-+			aborts++;
-+			ASSERT_EQ(get_pending(variant), 0);
-+			ASSERT_EQ(atomic_load(&lock), 0);
-+		}
-+	}
-+
-+	it.it_interval.tv_usec = 0;
-+	it.it_value.tv_usec = 0;
-+	ASSERT_EQ(setitimer(ITIMER_REAL, &it, NULL), 0);
-+
-+	ksft_print_msg("%s: %lu acquisitions, %lu aborts\n", __func__, success, aborts);
-+	ASSERT_GT(success, 0);
-+	ASSERT_GT(aborts, 0);
++	ASSERT_EQ(r, 0);
++	if (!io.rseq_ok)
++		SKIP(return, "Cannot register rseq on the libc-less worker");
++	ASSERT_EQ(io.violated, 0);
++	ksft_print_msg("%s: %lu acquisitions, %lu aborts\n", __func__,
++		       io.success, io.aborts);
++	ASSERT_GT(io.success, 0);
++	ASSERT_GT(io.aborts, 0);
 +}
 +
  TEST_HARNESS_MAIN

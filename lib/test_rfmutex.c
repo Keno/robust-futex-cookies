@@ -123,10 +123,20 @@ struct worker_arg {
 	enum rfm_alloc alloc;
 };
 
-static int worker_trampoline(void *p)
+static int worker_body(void *p)
 {
 	struct worker_arg *wa = p;
 	return worker(wa->a, wa->idx, wa->hold_every, wa->alloc);
+}
+
+static int worker_trampoline(void *p)
+{
+	/*
+	 * The clone()d worker process inherited the libc's rseq
+	 * registration; run the actual mutex work on a libc-less thread so
+	 * it owns rseq and the robust list independent of the libc version.
+	 */
+	return rfm_run_libcless(worker_body, p);
 }
 
 static pid_t spawn_worker(struct worker_arg *wa)
@@ -332,10 +342,30 @@ static int test_counter_generations(int nworkers, int duration_ms)
  * Cookie allocator reuse: a process claims a cookie and dies; a new
  * process must be able to reclaim it.
  */
+struct reuse_arg {
+	enum rfm_alloc alloc;
+	bool detach;
+};
+
+static int reuse_child(void *p)
+{
+	struct reuse_arg *ra = p;
+	rfm_region_t *cr = rfm_region_attach(REGION_PATH);
+
+	if (!cr || rfm_thread_attach(cr, ra->alloc) || rfm_thread_cookie() != 1)
+		return 1;
+	if (ra->detach)
+		rfm_thread_detach(cr);
+	/* Otherwise the libc-less thread exits holding the cookie, so the
+	 * kernel marks it dead and it must be reclaimable below. */
+	return 0;
+}
+
 static int test_alloc_reuse(enum rfm_alloc alloc)
 {
 	rfm_region_t *r;
 	struct testarea *a = setup(&r, RFM_TYPE_EXPLICIT);
+	struct reuse_arg hold = { alloc, false }, release = { alloc, true };
 	int failed = 0, wstatus;
 	pid_t pid;
 
@@ -344,24 +374,15 @@ static int test_alloc_reuse(enum rfm_alloc alloc)
 
 	/* Child 1 allocates the first cookie and dies holding it */
 	pid = fork();
-	if (!pid) {
-		rfm_region_t *cr = rfm_region_attach(REGION_PATH);
-		if (rfm_thread_attach(cr, alloc) || rfm_thread_cookie() != 1)
-			_exit(1);
-		_exit(0);	/* dies without detach */
-	}
+	if (!pid)
+		_exit(rfm_run_libcless(reuse_child, &hold));
 	waitpid(pid, &wstatus, 0);
 	failed |= WEXITSTATUS(wstatus);
 
 	/* Child 2 must get cookie 1 again */
 	pid = fork();
-	if (!pid) {
-		rfm_region_t *cr = rfm_region_attach(REGION_PATH);
-		if (rfm_thread_attach(cr, alloc) || rfm_thread_cookie() != 1)
-			_exit(1);
-		rfm_thread_detach(cr);
-		_exit(0);
-	}
+	if (!pid)
+		_exit(rfm_run_libcless(reuse_child, &release));
 	waitpid(pid, &wstatus, 0);
 	failed |= WEXITSTATUS(wstatus);
 

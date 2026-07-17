@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <linux/futex.h>
 #include <linux/membarrier.h>
+#include <sched.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -720,4 +721,77 @@ void rfm_thread_detach(rfm_region_t *r)
 uint32_t rfm_thread_cookie(void)
 {
 	return rfm_tls.cookie;
+}
+
+/* ---------------------------------------------------------------------
+ * libc-less worker thread
+ *
+ * rfm_thread_init_common() registers the thread's own rseq area. Modern
+ * glibc (>= 2.35) registers rseq on every thread it creates, so that
+ * registration would fail with EINVAL (a different rseq is already
+ * registered on the task). Rather than depend on the libc version or its
+ * rseq bookkeeping, run rfmutex work on a thread the libc never touched:
+ * a raw clone(CLONE_VM|CLONE_THREAD) task starts with rseq == NULL and no
+ * robust list, so the callee owns both outright.
+ *
+ * The thread shares the address space and stays in the thread group (so a
+ * SIGKILL of the process kills it too and the kernel walks its robust list
+ * at death, which is exactly what the robustness tests exercise). It has
+ * no libc TLS of its own and inherits the caller's %fs; callers therefore
+ * must not touch the per-thread rfm state on the spawning thread while the
+ * libc-less thread runs (the tests never do: exactly one attached worker
+ * runs per process).
+ */
+#define RFM_BARE_STACK	(256 * 1024)
+
+struct rfm_bare {
+	int (*fn)(void *);
+	void *arg;
+	int ret;
+};
+
+static int rfm_bare_entry(void *p)
+{
+	struct rfm_bare *b = p;
+
+	b->ret = b->fn(b->arg);
+	return 0;
+}
+
+int rfm_run_libcless(int (*fn)(void *), void *arg)
+{
+	struct rfm_bare b = { .fn = fn, .arg = arg, .ret = 0 };
+	volatile pid_t ctid = 1;
+	char *stack;
+	long tid;
+
+	stack = mmap(NULL, RFM_BARE_STACK, PROT_READ | PROT_WRITE,
+		     MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+	if (stack == MAP_FAILED)
+		return -errno;
+
+	tid = clone(rfm_bare_entry, stack + RFM_BARE_STACK,
+		    CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND |
+		    CLONE_THREAD | CLONE_CHILD_CLEARTID,
+		    &b, NULL, NULL, (pid_t *)&ctid);
+	if (tid < 0) {
+		int e = errno;
+
+		munmap(stack, RFM_BARE_STACK);
+		return -e;
+	}
+
+	/*
+	 * Join: CLONE_CHILD_CLEARTID makes the kernel zero @ctid and
+	 * FUTEX_WAKE it when the thread exits (normally or via SIGKILL).
+	 */
+	for (;;) {
+		pid_t v = __atomic_load_n(&ctid, __ATOMIC_ACQUIRE);
+
+		if (!v)
+			break;
+		syscall(SYS_futex, &ctid, FUTEX_WAIT, v, NULL, NULL, 0);
+	}
+	munmap(stack, RFM_BARE_STACK);
+	return b.ret;
 }

@@ -1,4 +1,4 @@
-From 378b31935b99bfe5f697cfb9c570e172ea8b4a7e Mon Sep 17 00:00:00 2001
+From fe2fddb22456953d48f3ff9f112ed65a01424568 Mon Sep 17 00:00:00 2001
 From: Keno Fischer <keno@juliahub.com>
 Date: Thu, 16 Jul 2026 08:23:02 +0000
 Subject: [PATCH 6/6] selftests/membarrier: Add tests for
@@ -27,8 +27,8 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
 ---
  tools/testing/selftests/membarrier/.gitignore |   1 +
  tools/testing/selftests/membarrier/Makefile   |   3 +-
- .../membarrier/membarrier_shared_rseq_test.c  | 335 ++++++++++++++++++
- 3 files changed, 338 insertions(+), 1 deletion(-)
+ .../membarrier/membarrier_shared_rseq_test.c  | 416 ++++++++++++++++++
+ 3 files changed, 419 insertions(+), 1 deletion(-)
  create mode 100644 tools/testing/selftests/membarrier/membarrier_shared_rseq_test.c
 
 diff --git a/tools/testing/selftests/membarrier/.gitignore b/tools/testing/selftests/membarrier/.gitignore
@@ -55,10 +55,10 @@ index 829f95c83515..b1df937623dd 100644
  include ../lib.mk
 diff --git a/tools/testing/selftests/membarrier/membarrier_shared_rseq_test.c b/tools/testing/selftests/membarrier/membarrier_shared_rseq_test.c
 new file mode 100644
-index 000000000000..27f747763aae
+index 000000000000..0f7b67e4c410
 --- /dev/null
 +++ b/tools/testing/selftests/membarrier/membarrier_shared_rseq_test.c
-@@ -0,0 +1,335 @@
+@@ -0,0 +1,416 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
 + * Tests for MEMBARRIER_CMD_SHARED_EXPEDITED_RSEQ: an RSEQ fence targeting
@@ -67,7 +67,9 @@ index 000000000000..27f747763aae
 + */
 +#define _GNU_SOURCE
 +#include <errno.h>
++#include <linux/futex.h>
 +#include <linux/membarrier.h>
++#include <sched.h>
 +#include <signal.h>
 +#include <stdatomic.h>
 +#include <stdbool.h>
@@ -103,6 +105,65 @@ index 000000000000..27f747763aae
 +static int register_rseq(void)
 +{
 +	return syscall(SYS_rseq, &own_rseq, sizeof(own_rseq), 0, RSEQ_SIG);
++}
++
++/*
++ * Run @fn(@arg) on a "libc-less" thread: a raw clone(CLONE_VM|CLONE_THREAD)
++ * task the C library never set up, so the kernel starts it with rseq ==
++ * NULL. It can therefore register its own rseq regardless of the libc
++ * version (modern glibc auto-registers rseq on every thread it creates,
++ * which would make register_rseq() above fail with EINVAL). The thread
++ * shares the caller's address space (and thus its per-mm membarrier
++ * registration state, as the tests require) and is joined via a
++ * CLONE_CHILD_CLEARTID futex. Returns @fn's value or a negative errno.
++ */
++struct bare_ctx {
++	int (*fn)(void *);
++	void *arg;
++	int ret;
++};
++
++static int bare_entry(void *p)
++{
++	struct bare_ctx *c = p;
++
++	c->ret = c->fn(c->arg);
++	return 0;
++}
++
++static int run_libcless(int (*fn)(void *), void *arg)
++{
++	const size_t sz = 256 * 1024;
++	struct bare_ctx ctx = { fn, arg, 0 };
++	volatile pid_t ctid = 1;
++	char *stack;
++	long tid;
++
++	stack = mmap(NULL, sz, PROT_READ | PROT_WRITE,
++		     MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
++	if (stack == MAP_FAILED)
++		return -errno;
++
++	tid = clone(bare_entry, stack + sz,
++		    CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND |
++		    CLONE_THREAD | CLONE_CHILD_CLEARTID,
++		    &ctx, NULL, NULL, (pid_t *)&ctid);
++	if (tid < 0) {
++		int e = errno;
++
++		munmap(stack, sz);
++		return -e;
++	}
++
++	for (;;) {
++		pid_t v = __atomic_load_n(&ctid, __ATOMIC_ACQUIRE);
++
++		if (!v)
++			break;
++		syscall(SYS_futex, &ctid, FUTEX_WAIT, v, NULL, NULL, 0);
++	}
++	munmap(stack, sz);
++	return ctx.ret;
 +}
 +
 +/*
@@ -154,24 +215,44 @@ index 000000000000..27f747763aae
 +	return true;
 +}
 +
-+static pid_t spawn_spinner(struct shared_state *sh, bool register_membarrier)
-+{
-+	pid_t pid = fork();
++struct spinner_ctx {
++	struct shared_state *sh;
++	bool register_membarrier;
++};
 +
-+	if (pid)
-+		return pid;
++static int spinner_body(void *p)
++{
++	struct spinner_ctx *c = p;
++	struct shared_state *sh = c->sh;
 +
 +	if (register_rseq())
-+		_exit(1);
-+	if (register_membarrier &&
++		return 1;
++	if (c->register_membarrier &&
 +	    sys_membarrier(MEMBARRIER_CMD_REGISTER_SHARED_EXPEDITED_RSEQ, 0, 0, 0))
-+		_exit(2);
++		return 2;
 +
 +	while (!atomic_load(&sh->stop)) {
 +		if (rseq_spin(sh))
 +			atomic_fetch_add(&sh->aborts, 1);
 +	}
-+	_exit(0);
++	return 0;
++}
++
++static pid_t spawn_spinner(struct shared_state *sh, bool register_membarrier)
++{
++	struct spinner_ctx ctx = { sh, register_membarrier };
++	pid_t pid = fork();
++
++	if (pid)
++		return pid;
++
++	/*
++	 * The forked child inherited the libc's rseq registration; run the
++	 * spinner on a libc-less thread so it owns rseq regardless of the
++	 * libc version. The thread shares this child's mm, so the per-mm
++	 * membarrier registration state the tests set up is preserved.
++	 */
++	_exit(run_libcless(spinner_body, &ctx));
 +}
 +
 +static void stop_spinner(struct shared_state *sh, pid_t pid, int *wstatus)

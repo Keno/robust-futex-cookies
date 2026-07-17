@@ -137,15 +137,24 @@ static inline void impl_unlock(struct bencharea *a, enum impl im)
 }
 
 /* --------------------------------------------------------------------- */
-static void bench_uncontended(struct bencharea *a, rfm_region_t *r, enum impl im,
-			      unsigned long iters)
+struct uncontended_ctx {
+	struct bencharea *a;
+	rfm_region_t *r;
+	enum impl im;
+	unsigned long iters;
+};
+
+static int bench_uncontended_body(void *p)
 {
+	struct uncontended_ctx *c = p;
+	struct bencharea *a = c->a;
+	enum impl im = c->im;
 	uint64_t t0, t1;
 
 	impl_init(a, im, false);
-	if (impl_attach(a, r, im)) {
+	if (impl_attach(a, c->r, im)) {
 		printf("%-28s: attach failed\n", impl_names[im]);
-		return;
+		return 0;
 	}
 
 	/* warmup */
@@ -154,14 +163,30 @@ static void bench_uncontended(struct bencharea *a, rfm_region_t *r, enum impl im
 		impl_unlock(a, im);
 	}
 	t0 = now_ns();
-	for (unsigned long i = 0; i < iters; i++) {
+	for (unsigned long i = 0; i < c->iters; i++) {
 		impl_lock(a, im);
 		impl_unlock(a, im);
 	}
 	t1 = now_ns();
 	printf("%-28s: %7.1f ns/op (uncontended lock+unlock)\n",
-	       impl_names[im], (double)(t1 - t0) / iters);
-	rfm_thread_detach(r);
+	       impl_names[im], (double)(t1 - t0) / c->iters);
+	rfm_thread_detach(c->r);
+	return 0;
+}
+
+static void bench_uncontended(struct bencharea *a, rfm_region_t *r, enum impl im,
+			      unsigned long iters)
+{
+	struct uncontended_ctx c = { a, r, im, iters };
+
+	/*
+	 * rfmutex needs to own rseq/the robust list, so run it on a
+	 * libc-less thread; the pthread baselines stay on the caller.
+	 */
+	if (im == IMPL_PTHREAD || im == IMPL_PTHREAD_ROBUST)
+		bench_uncontended_body(&c);
+	else
+		rfm_run_libcless(bench_uncontended_body, &c);
 }
 
 /* --------------------------------------------------------------------- */
@@ -170,7 +195,7 @@ struct warg {
 	int idx;
 };
 
-static int contended_worker(void *p)
+static int contended_loop(void *p)
 {
 	struct warg *wa = p;
 	rfm_region_t *r = rfm_region_attach(REGION_PATH);
@@ -195,11 +220,21 @@ static int contended_worker(void *p)
 	return 0;
 }
 
+static int contended_worker(void *p)
+{
+	struct warg *wa = p;
+
+	/* rfmutex work runs on a libc-less thread (owns rseq/robust list). */
+	if (wa->im == IMPL_PTHREAD || wa->im == IMPL_PTHREAD_ROBUST)
+		return contended_loop(p);
+	return rfm_run_libcless(contended_loop, p);
+}
+
 static void bench_contended(struct bencharea *a, enum impl im, int nworkers,
 			    int duration_ms)
 {
-	struct warg wa[16];
-	pid_t pids[16];
+	struct warg wa[nworkers];
+	pid_t pids[nworkers];
 	int wstatus;
 	uint64_t t0, t1;
 
