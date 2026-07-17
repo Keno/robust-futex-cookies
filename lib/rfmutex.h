@@ -90,6 +90,20 @@ int rfm_thread_attach(rfm_region_t *r, enum rfm_alloc alloc);
 void rfm_thread_detach(rfm_region_t *r);
 uint32_t rfm_thread_cookie(void);	/* explicit cookie of this thread, 0 if none */
 
+/*
+ * Run @fn(@arg) on a "libc-less" thread: one created with a raw
+ * clone(CLONE_VM|CLONE_THREAD) that the C library never set up, so the
+ * kernel starts it with rseq == NULL and no robust list. The callee is
+ * therefore in full control of rseq and the robust list regardless of the
+ * libc version (modern glibc auto-registers rseq on every libc-created
+ * thread, which otherwise makes the thread's own rseq registration fail
+ * with EINVAL). The thread shares the address space and thread group, so
+ * it still dies with the process for robust-list death testing, and it is
+ * joined before this returns. Returns @fn's value, or a negative errno if
+ * the thread could not be created.
+ */
+int rfm_run_libcless(int (*fn)(void *), void *arg);
+
 /* Mutex API. Returns 0, EOWNERDEAD (lock acquired, previous owner died),
  * EBUSY (trylock only) or a negative errno on hard failure. */
 int rfm_mutex_init(rfmutex_t *m, enum rfm_type type);
