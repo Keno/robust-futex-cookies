@@ -61,7 +61,9 @@ artifact provenance).
 
 | Config                | Models                                            | Result |
 |-----------------------|---------------------------------------------------|--------|
-| MCExplicitOK          | final ABI + fixed walk order (pending first) + lease-last list order; 3 threads, 2 leased cookies | PASS (incl. Recovery; 2.0M states, exhaustive) |
+| MCExplicitOK          | final ABI + fixed walk order (pending first) + lease-last list order + cleanup wake + WAITERS re-assertion; 3 threads, 3 leased cookies, waiters modeled | PASS, exhaustive, deadlock checking on: TypeOK/NoCorruption/Exclusion + Recovery + NoLostWakeup; 115.2M generated / 33.5M distinct |
+| MCExplicitNoWake      | as OK but the exit cleanup never wakes             | NoLostWakeup **violated** (sleeping waiters never woken after owner death) |
+| MCExplicitLostWaiter  | as OK but woken acquirers do not re-assert WAITERS | NoLostWakeup **violated** (the lost waiter bug: kernel unlock wiped the bit, the woken waiter's fast-path unlock strands the rest) |
 | MCExplicitLeaseABA    | as OK but historical walk order (entries, then pending) | NoCorruption **violated** (lease released before the stale pending op: issue #1) |
 | MCExplicitLeaseOrder  | as OK but the lease slot walked before held locks | NoCorruption **violated** (reused cookie + misattributed second death lets a live re-acquirer be wiped by the first walk's stale entry) |
 | MCExplicitTid         | classic TID protocol, TID collision across pidns  | NoCorruption **violated** (the original kernel bug) |
