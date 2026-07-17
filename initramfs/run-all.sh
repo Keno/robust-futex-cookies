@@ -8,3 +8,4 @@ cd /tests || exit 1
 ./membarrier_shared_rseq_test || exit 1
 ./test_rfmutex ${RFM_TEST_MS:-200} || exit 1
 ./robust_lost_wakeup || exit 1
+./bench_rfmutex 20000 200 4 || exit 1

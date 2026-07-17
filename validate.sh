@@ -88,14 +88,14 @@ step "initramfs" "$HERE/harness/mkinitramfs.sh" "$HERE/initramfs/run-all.sh" \
     "$KSRC/tools/testing/selftests/futex/functional/robust_list" \
     "$KSRC/tools/testing/selftests/membarrier/membarrier_shared_rseq_test" \
     "$HERE/lib/test_rfmutex" \
+    "$HERE/lib/bench_rfmutex" \
     "$HERE/repro/robust_lost_wakeup"
 note "initramfs sha256: $(sha256sum "$HERE/initramfs/initramfs.cpio.gz" | cut -d' ' -f1)"
 step "QEMU guest tests" "$HERE/harness/runqemu.sh" -c "$(nproc)" -t 900
 
-# --- 4. benchmark smoke --------------------------------------------------
-# A quick run which must complete without failures; published numbers in
-# bench/RESULTS.md are recorded from full length native runs.
-step "benchmark smoke" "$HERE/lib/bench_rfmutex" 20000 200 4
+# The benchmark smoke run happens inside the QEMU guest (run-all.sh):
+# rfmutex requires the patched kernel, so it cannot run on the host.
+# Published numbers in bench/RESULTS.md are from full length guest runs.
 
 # --- 5. TLA+ model matrix ------------------------------------------------
 # name:expected:deadlockflag. "pass" = no error found; "violation" = TLC

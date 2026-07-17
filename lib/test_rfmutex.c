@@ -323,7 +323,15 @@ static int test_kill_stress(enum rfm_type type, enum rfm_alloc alloc,
 		}
 	}
 
-	for (int k = 0; k < kills; k++) {
+	/*
+	 * Whether a victim dies while actually holding a lock is up to
+	 * scheduling luck; the recovery assertion below must not be. Keep
+	 * killing (up to a 10x budget) until at least one owner death was
+	 * recovered from.
+	 */
+	for (int k = 0;
+	     k < kills || (kills > 0 && k < 10 * kills &&
+			   !atomic_load(&a->owner_dead_seen)); k++) {
 		usleep(duration_ms * 1000 / kills);
 		int victim = rand_r(&seed) % nworkers;
 
