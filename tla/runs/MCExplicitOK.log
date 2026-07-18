@@ -1,14 +1,14 @@
 TLC2 Version 2026.07.15.134331 (rev: 227f61b)
-Running breadth-first search Model-Checking with fp 56 and seed -6210551301257522419 with 128 workers on 128 cores with 27305MB heap and 64MB offheap memory [pid: 144398] (Linux 6.8.0-134-generic amd64, Debian 11.0.24 64bit, MSBDiskFPSet, DiskStateQueue).
+Running breadth-first search Model-Checking with fp 80 and seed 7623268064043090298 with 128 workers on 128 cores with 27305MB heap and 64MB offheap memory [pid: 197107] (Linux 6.8.0-134-generic amd64, Debian 11.0.24 64bit, MSBDiskFPSet, DiskStateQueue).
 Parsing file /workspace/robust-futex-work/tla/MCExplicitOK.tla
 Parsing file /workspace/robust-futex-work/tla/ExplicitCookie.tla
-Parsing file /tmp/tlc-15117754372950359606/_TLCTrace.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
-Parsing file /tmp/tlc-15117754372950359606/Naturals.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
-Parsing file /tmp/tlc-15117754372950359606/FiniteSets.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
-Parsing file /tmp/tlc-15117754372950359606/Sequences.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
-Parsing file /tmp/tlc-15117754372950359606/TLC.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
-Parsing file /tmp/tlc-15117754372950359606/TLCExt.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
-Parsing file /tmp/tlc-15117754372950359606/Integers.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Parsing file /tmp/tlc-14555463463460717188/_TLCTrace.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-14555463463460717188/Naturals.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-14555463463460717188/FiniteSets.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-14555463463460717188/Sequences.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-14555463463460717188/TLC.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-14555463463460717188/TLCExt.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-14555463463460717188/Integers.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
 Semantic processing of module Naturals
 Semantic processing of module Sequences
 Semantic processing of module FiniteSets
@@ -22,30 +22,28 @@ Linting of module ExplicitCookie
 Linting of module TLCExt
 Linting of module _TLCTrace
 Linting of module MCExplicitOK
-Starting... (2026-07-17 16:00:18)
+Starting... (2026-07-17 23:29:01)
 Implied-temporal checking--satisfiability problem has 4 branches.
 Computing initial states...
-Finished computing initial states: 1 distinct state generated at 2026-07-17 16:00:19.
-Checking 4 branches of temporal properties for the current state space with 24647 total distinct states at (2026-07-17 16:00:22)
-Finished checking temporal properties in 00s at 2026-07-17 16:00:22
-Checking 4 branches of temporal properties for the current state space with 4779468 total distinct states at (2026-07-17 16:01:22)
-Finished checking temporal properties in 25s at 2026-07-17 16:01:47
-Checking 4 branches of temporal properties for the current state space with 13311074 total distinct states at (2026-07-17 16:03:47)
-Finished checking temporal properties in 01min 20s at 2026-07-17 16:05:08
-Checking 4 branches of temporal properties for the current state space with 37604067 total distinct states at (2026-07-17 16:11:08)
-Finished checking temporal properties in 03min 42s at 2026-07-17 16:14:50
-Checking 4 branches of temporal properties for the current state space with 119831093 total distinct states at (2026-07-17 16:28:51)
-Finished checking temporal properties in 13min 38s at 2026-07-17 16:42:29
-Checkpointing of run states/26-07-17-16-00-18.087
-Checkpointing completed at (2026-07-17 16:43:29)
-Checking 4 branches of temporal properties for the complete state space with 134121612 total distinct states at (2026-07-17 16:45:42)
-Finished checking temporal properties in 15min 40s at 2026-07-17 17:01:22
+Finished computing initial states: 1 distinct state generated at 2026-07-17 23:29:01.
+Checking 4 branches of temporal properties for the current state space with 41700 total distinct states at (2026-07-17 23:29:04)
+Finished checking temporal properties in 00s at 2026-07-17 23:29:05
+Checking 4 branches of temporal properties for the current state space with 8610347 total distinct states at (2026-07-17 23:30:05)
+Finished checking temporal properties in 43s at 2026-07-17 23:30:48
+Checking 4 branches of temporal properties for the current state space with 29846777 total distinct states at (2026-07-17 23:33:49)
+Finished checking temporal properties in 02min 57s at 2026-07-17 23:36:46
+Checking 4 branches of temporal properties for the current state space with 105723236 total distinct states at (2026-07-17 23:48:46)
+Finished checking temporal properties in 11min 37s at 2026-07-18 00:00:24
+Checkpointing of run states/26-07-17-23-29-01.317
+Checkpointing completed at (2026-07-18 00:01:24)
+Checking 4 branches of temporal properties for the complete state space with 133827924 total distinct states at (2026-07-18 00:05:52)
+Finished checking temporal properties in 14min 24s at 2026-07-18 00:20:17
 Model checking completed. No error has been found.
   Estimates of the probability that TLC did not check all reachable states
   because two distinct states had the same fingerprint:
   calculated (optimistic):  val = 1.5E-4
-  based on the actual fingerprints:  val = 5.0E-5
-115192261 states generated, 33530403 distinct states found, 0 states left on queue.
-The depth of the complete state graph search is 66.
+  based on the actual fingerprints:  val = 1.5E-5
+114916303 states generated, 33456981 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 67.
 The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 9 and the 95th percentile is 2).
-Finished in 01h 01min at (2026-07-17 17:01:29)
+Finished in 51min 22s at (2026-07-18 00:20:23)
