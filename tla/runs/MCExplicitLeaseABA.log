@@ -1,14 +1,14 @@
 TLC2 Version 2026.07.15.134331 (rev: 227f61b)
-Running breadth-first search Model-Checking with fp 65 and seed 373318629375271376 with 128 workers on 128 cores with 27305MB heap and 64MB offheap memory [pid: 256668] (Linux 6.8.0-134-generic amd64, Debian 11.0.24 64bit, MSBDiskFPSet, DiskStateQueue).
+Running breadth-first search Model-Checking with fp 95 and seed -7127123511373088396 with 128 workers on 128 cores with 27305MB heap and 64MB offheap memory [pid: 65232] (Linux 6.8.0-134-generic amd64, Debian 11.0.24 64bit, MSBDiskFPSet, DiskStateQueue).
 Parsing file /workspace/robust-futex-work/tla/MCExplicitLeaseABA.tla
 Parsing file /workspace/robust-futex-work/tla/ExplicitCookie.tla
-Parsing file /tmp/tlc-5068693112682673900/_TLCTrace.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
-Parsing file /tmp/tlc-5068693112682673900/Naturals.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
-Parsing file /tmp/tlc-5068693112682673900/FiniteSets.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
-Parsing file /tmp/tlc-5068693112682673900/Sequences.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
-Parsing file /tmp/tlc-5068693112682673900/TLC.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
-Parsing file /tmp/tlc-5068693112682673900/TLCExt.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
-Parsing file /tmp/tlc-5068693112682673900/Integers.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Parsing file /tmp/tlc-8012415780398390263/_TLCTrace.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-8012415780398390263/Naturals.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-8012415780398390263/FiniteSets.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-8012415780398390263/Sequences.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-8012415780398390263/TLC.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-8012415780398390263/TLCExt.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-8012415780398390263/Integers.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
 Semantic processing of module Naturals
 Semantic processing of module Sequences
 Semantic processing of module FiniteSets
@@ -22,9 +22,9 @@ Linting of module ExplicitCookie
 Linting of module TLCExt
 Linting of module _TLCTrace
 Linting of module MCExplicitLeaseABA
-Starting... (2026-07-18 03:48:33)
+Starting... (2026-07-20 23:41:30)
 Computing initial states...
-Finished computing initial states: 1 distinct state generated at 2026-07-18 03:48:34.
+Finished computing initial states: 1 distinct state generated at 2026-07-20 23:41:31.
 Error: Invariant NoCorruption is violated.
 Error: The behavior up to this point is:
 State 1: <Initial predicate>
@@ -44,7 +44,7 @@ State 1: <Initial predicate>
 /\ cookie = (t1 :> 0 @@ t2 :> 0 @@ t3 :> 0)
 /\ owner = "none"
 
-State 2: <Attach(t1) line 166, col 5 to line 176, col 59 of module ExplicitCookie>
+State 2: <Attach(t1) line 153, col 5 to line 163, col 59 of module ExplicitCookie>
 /\ corrupt = FALSE
 /\ done_e = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
 /\ done_p = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
@@ -61,7 +61,7 @@ State 2: <Attach(t1) line 166, col 5 to line 176, col 59 of module ExplicitCooki
 /\ cookie = (t1 :> 1 @@ t2 :> 0 @@ t3 :> 0)
 /\ owner = "none"
 
-State 3: <StartAcq(t1) line 186, col 5 to line 193, col 35 of module ExplicitCookie>
+State 3: <StartAcq(t1) line 173, col 5 to line 180, col 35 of module ExplicitCookie>
 /\ corrupt = FALSE
 /\ done_e = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
 /\ done_p = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
@@ -78,7 +78,7 @@ State 3: <StartAcq(t1) line 186, col 5 to line 193, col 35 of module ExplicitCoo
 /\ cookie = (t1 :> 1 @@ t2 :> 0 @@ t3 :> 0)
 /\ owner = "none"
 
-State 4: <Die(t1) line 308, col 5 to line 313, col 59 of module ExplicitCookie>
+State 4: <Die(t1) line 295, col 5 to line 300, col 59 of module ExplicitCookie>
 /\ corrupt = FALSE
 /\ done_e = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
 /\ done_p = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
@@ -95,7 +95,7 @@ State 4: <Die(t1) line 308, col 5 to line 313, col 59 of module ExplicitCookie>
 /\ cookie = (t1 :> 1 @@ t2 :> 0 @@ t3 :> 0)
 /\ owner = "none"
 
-State 5: <CleanupEntry(t1) line 335, col 5 to line 353, col 43 of module ExplicitCookie>
+State 5: <CleanupEntry(t1) line 322, col 5 to line 340, col 43 of module ExplicitCookie>
 /\ corrupt = FALSE
 /\ done_e = (t1 :> TRUE @@ t2 :> FALSE @@ t3 :> FALSE)
 /\ done_p = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
@@ -112,7 +112,7 @@ State 5: <CleanupEntry(t1) line 335, col 5 to line 353, col 43 of module Explici
 /\ cookie = (t1 :> 1 @@ t2 :> 0 @@ t3 :> 0)
 /\ owner = "none"
 
-State 6: <CleanupSlot(t1) line 325, col 5 to line 330, col 59 of module ExplicitCookie>
+State 6: <CleanupSlot(t1) line 312, col 5 to line 317, col 59 of module ExplicitCookie>
 /\ corrupt = FALSE
 /\ done_e = (t1 :> TRUE @@ t2 :> FALSE @@ t3 :> FALSE)
 /\ done_p = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
@@ -129,7 +129,7 @@ State 6: <CleanupSlot(t1) line 325, col 5 to line 330, col 59 of module Explicit
 /\ cookie = (t1 :> 1 @@ t2 :> 0 @@ t3 :> 0)
 /\ owner = "none"
 
-State 7: <Attach(t2) line 166, col 5 to line 176, col 59 of module ExplicitCookie>
+State 7: <Attach(t2) line 153, col 5 to line 163, col 59 of module ExplicitCookie>
 /\ corrupt = FALSE
 /\ done_e = (t1 :> TRUE @@ t2 :> FALSE @@ t3 :> FALSE)
 /\ done_p = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
@@ -146,7 +146,7 @@ State 7: <Attach(t2) line 166, col 5 to line 176, col 59 of module ExplicitCooki
 /\ cookie = (t1 :> 1 @@ t2 :> 1 @@ t3 :> 0)
 /\ owner = "none"
 
-State 8: <StartAcq(t2) line 186, col 5 to line 193, col 35 of module ExplicitCookie>
+State 8: <StartAcq(t2) line 173, col 5 to line 180, col 35 of module ExplicitCookie>
 /\ corrupt = FALSE
 /\ done_e = (t1 :> TRUE @@ t2 :> FALSE @@ t3 :> FALSE)
 /\ done_p = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
@@ -163,7 +163,7 @@ State 8: <StartAcq(t2) line 186, col 5 to line 193, col 35 of module ExplicitCoo
 /\ cookie = (t1 :> 1 @@ t2 :> 1 @@ t3 :> 0)
 /\ owner = "none"
 
-State 9: <Acquire(t2) line 197, col 5 to line 204, col 60 of module ExplicitCookie>
+State 9: <Acquire(t2) line 184, col 5 to line 191, col 60 of module ExplicitCookie>
 /\ corrupt = FALSE
 /\ done_e = (t1 :> TRUE @@ t2 :> FALSE @@ t3 :> FALSE)
 /\ done_p = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
@@ -180,7 +180,7 @@ State 9: <Acquire(t2) line 197, col 5 to line 204, col 60 of module ExplicitCook
 /\ cookie = (t1 :> 1 @@ t2 :> 1 @@ t3 :> 0)
 /\ owner = t2
 
-State 10: <CleanupPending(t1) line 357, col 5 to line 394, col 43 of module ExplicitCookie>
+State 10: <CleanupPending(t1) line 344, col 5 to line 377, col 43 of module ExplicitCookie>
 /\ corrupt = TRUE
 /\ done_e = (t1 :> TRUE @@ t2 :> FALSE @@ t3 :> FALSE)
 /\ done_p = (t1 :> TRUE @@ t2 :> FALSE @@ t3 :> FALSE)
@@ -197,7 +197,7 @@ State 10: <CleanupPending(t1) line 357, col 5 to line 394, col 43 of module Expl
 /\ cookie = (t1 :> 1 @@ t2 :> 1 @@ t3 :> 0)
 /\ owner = t2
 
-6701 states generated, 3776 distinct states found, 1851 states left on queue.
-The depth of the complete state graph search is 15.
-Finished in 02s at (2026-07-18 03:48:35)
-Trace exploration spec path: ./MCExplicitLeaseABA_TTrace_1784346513.tla
+7447 states generated, 4124 distinct states found, 1944 states left on queue.
+The depth of the complete state graph search is 14.
+Finished in 02s at (2026-07-20 23:41:32)
+Trace exploration spec path: ./MCExplicitLeaseABA_TTrace_1784590890.tla
