@@ -1,14 +1,14 @@
 TLC2 Version 2026.07.15.134331 (rev: 227f61b)
-Running breadth-first search Model-Checking with fp 120 and seed 6752570974290213025 with 128 workers on 128 cores with 27305MB heap and 64MB offheap memory [pid: 67623] (Linux 6.8.0-134-generic amd64, Debian 11.0.24 64bit, MSBDiskFPSet, DiskStateQueue).
+Running breadth-first search Model-Checking with fp 76 and seed -923760615664252137 with 128 workers on 128 cores with 27305MB heap and 64MB offheap memory [pid: 117748] (Linux 6.8.0-134-generic amd64, Debian 11.0.24 64bit, MSBDiskFPSet, DiskStateQueue).
 Parsing file /workspace/robust-futex-work/tla/MCCounterOrigDesign.tla
 Parsing file /workspace/robust-futex-work/tla/CounterMutex.tla
-Parsing file /tmp/tlc-9378430049783030421/_TLCTrace.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
-Parsing file /tmp/tlc-9378430049783030421/Naturals.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
-Parsing file /tmp/tlc-9378430049783030421/FiniteSets.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
-Parsing file /tmp/tlc-9378430049783030421/Sequences.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
-Parsing file /tmp/tlc-9378430049783030421/TLC.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
-Parsing file /tmp/tlc-9378430049783030421/TLCExt.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
-Parsing file /tmp/tlc-9378430049783030421/Integers.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Parsing file /tmp/tlc-15227824813820930507/_TLCTrace.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-15227824813820930507/Naturals.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-15227824813820930507/FiniteSets.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-15227824813820930507/Sequences.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-15227824813820930507/TLC.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-15227824813820930507/TLCExt.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-15227824813820930507/Integers.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
 Semantic processing of module Naturals
 Semantic processing of module Sequences
 Semantic processing of module FiniteSets
@@ -22,9 +22,9 @@ Linting of module CounterMutex
 Linting of module TLCExt
 Linting of module _TLCTrace
 Linting of module MCCounterOrigDesign
-Starting... (2026-07-20 23:47:28)
+Starting... (2026-07-21 01:04:09)
 Computing initial states...
-Finished computing initial states: 1 distinct state generated at 2026-07-20 23:47:28.
+Finished computing initial states: 1 distinct state generated at 2026-07-21 01:04:09.
 Error: Invariant NoCorruption is violated.
 Error: The behavior up to this point is:
 State 1: <Initial predicate>
@@ -95,24 +95,24 @@ State 4: <GatePass(t1) line 152, col 5 to line 156, col 55 of module CounterMute
 /\ enq = (t1 :> FALSE @@ t2 :> FALSE)
 /\ owner = "none_"
 
-State 5: <Preempt(t1) line 278, col 5 to line 281, col 55 of module CounterMutex>
+State 5: <SetPCookie(t1) line 195, col 5 to line 200, col 41 of module CounterMutex>
 /\ corrupt = FALSE
 /\ ctr = 2
 /\ rgen = (t1 :> 0 @@ t2 :> 0)
 /\ word = [own |-> 0, od |-> FALSE]
 /\ alive = (t1 :> TRUE @@ t2 :> TRUE)
-/\ ecookie = 0
+/\ ecookie = 1
 /\ cleaned = (t1 :> FALSE @@ t2 :> FALSE)
-/\ pc = (t1 :> "setpc" @@ t2 :> "idle")
+/\ pc = (t1 :> "ready" @@ t2 :> "idle")
 /\ qgen = 0
 /\ pending = (t1 :> FALSE @@ t2 :> FALSE)
-/\ pcookie = (t1 :> 0 @@ t2 :> 0)
+/\ pcookie = (t1 :> 1 @@ t2 :> 0)
 /\ res = (t1 :> 1 @@ t2 :> 0)
-/\ guard = (t1 :> FALSE @@ t2 :> FALSE)
+/\ guard = (t1 :> TRUE @@ t2 :> FALSE)
 /\ enq = (t1 :> FALSE @@ t2 :> FALSE)
 /\ owner = "none_"
 
-State 6: <SetPCookie(t1) line 195, col 5 to line 200, col 41 of module CounterMutex>
+State 6: <Preempt(t1) line 278, col 5 to line 281, col 55 of module CounterMutex>
 /\ corrupt = FALSE
 /\ ctr = 2
 /\ rgen = (t1 :> 0 @@ t2 :> 0)
@@ -146,24 +146,24 @@ State 7: <VdsoArm(t1) line 204, col 5 to line 208, col 46 of module CounterMutex
 /\ enq = (t1 :> FALSE @@ t2 :> FALSE)
 /\ owner = "none_"
 
-State 8: <Arm(t2) line 122, col 5 to line 126, col 55 of module CounterMutex>
+State 8: <Die(t1) line 284, col 5 to line 287, col 55 of module CounterMutex>
 /\ corrupt = FALSE
 /\ ctr = 2
 /\ rgen = (t1 :> 0 @@ t2 :> 0)
 /\ word = [own |-> 0, od |-> FALSE]
-/\ alive = (t1 :> TRUE @@ t2 :> TRUE)
+/\ alive = (t1 :> FALSE @@ t2 :> TRUE)
 /\ ecookie = 1
 /\ cleaned = (t1 :> FALSE @@ t2 :> FALSE)
-/\ pc = (t1 :> "inhelper" @@ t2 :> "armed")
+/\ pc = (t1 :> "inhelper" @@ t2 :> "idle")
 /\ qgen = 0
 /\ pending = (t1 :> TRUE @@ t2 :> FALSE)
 /\ pcookie = (t1 :> 1 @@ t2 :> 0)
 /\ res = (t1 :> 1 @@ t2 :> 0)
-/\ guard = (t1 :> FALSE @@ t2 :> TRUE)
+/\ guard = (t1 :> FALSE @@ t2 :> FALSE)
 /\ enq = (t1 :> FALSE @@ t2 :> FALSE)
 /\ owner = "none_"
 
-State 9: <Die(t1) line 284, col 5 to line 287, col 55 of module CounterMutex>
+State 9: <Arm(t2) line 122, col 5 to line 126, col 55 of module CounterMutex>
 /\ corrupt = FALSE
 /\ ctr = 2
 /\ rgen = (t1 :> 0 @@ t2 :> 0)
@@ -367,7 +367,7 @@ State 20: <KernelCleanup(t1) line 298, col 5 to line 310, col 33 of module Count
 /\ enq = (t1 :> FALSE @@ t2 :> FALSE)
 /\ owner = t2
 
-55999 states generated, 23374 distinct states found, 5246 states left on queue.
-The depth of the complete state graph search is 24.
-Finished in 02s at (2026-07-20 23:47:30)
-Trace exploration spec path: ./MCCounterOrigDesign_TTrace_1784591247.tla
+52866 states generated, 22122 distinct states found, 5000 states left on queue.
+The depth of the complete state graph search is 23.
+Finished in 02s at (2026-07-21 01:04:11)
+Trace exploration spec path: ./MCCounterOrigDesign_TTrace_1784595848.tla

@@ -1,14 +1,14 @@
 TLC2 Version 2026.07.15.134331 (rev: 227f61b)
-Running breadth-first search Model-Checking with fp 12 and seed 220403655822524195 with 128 workers on 128 cores with 27305MB heap and 64MB offheap memory [pid: 66813] (Linux 6.8.0-134-generic amd64, Debian 11.0.24 64bit, MSBDiskFPSet, DiskStateQueue).
+Running breadth-first search Model-Checking with fp 41 and seed 8483091231553090837 with 128 workers on 128 cores with 27305MB heap and 64MB offheap memory [pid: 116958] (Linux 6.8.0-134-generic amd64, Debian 11.0.24 64bit, MSBDiskFPSet, DiskStateQueue).
 Parsing file /workspace/robust-futex-work/tla/MCCounterNoGate.tla
 Parsing file /workspace/robust-futex-work/tla/CounterMutex.tla
-Parsing file /tmp/tlc-18123913347540450358/_TLCTrace.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
-Parsing file /tmp/tlc-18123913347540450358/Naturals.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
-Parsing file /tmp/tlc-18123913347540450358/FiniteSets.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
-Parsing file /tmp/tlc-18123913347540450358/Sequences.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
-Parsing file /tmp/tlc-18123913347540450358/TLC.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
-Parsing file /tmp/tlc-18123913347540450358/TLCExt.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
-Parsing file /tmp/tlc-18123913347540450358/Integers.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Parsing file /tmp/tlc-14894779028469229766/_TLCTrace.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-14894779028469229766/Naturals.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-14894779028469229766/FiniteSets.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-14894779028469229766/Sequences.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-14894779028469229766/TLC.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-14894779028469229766/TLCExt.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-14894779028469229766/Integers.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
 Semantic processing of module Naturals
 Semantic processing of module Sequences
 Semantic processing of module FiniteSets
@@ -22,16 +22,16 @@ Linting of module CounterMutex
 Linting of module TLCExt
 Linting of module _TLCTrace
 Linting of module MCCounterNoGate
-Starting... (2026-07-20 23:46:10)
+Starting... (2026-07-21 01:02:51)
 Computing initial states...
-Finished computing initial states: 1 distinct state generated at 2026-07-20 23:46:10.
-Progress(33) at 2026-07-20 23:46:13: 830,299 states generated (830,299 s/min), 316,900 distinct states found (316,900 ds/min), 50,077 states left on queue.
+Finished computing initial states: 1 distinct state generated at 2026-07-21 01:02:52.
+Progress(32) at 2026-07-21 01:02:55: 723,626 states generated (723,626 s/min), 277,133 distinct states found (277,133 ds/min), 44,772 states left on queue.
 Model checking completed. No error has been found.
   Estimates of the probability that TLC did not check all reachable states
   because two distinct states had the same fingerprint:
   calculated (optimistic):  val = 3.1E-6
-  based on the actual fingerprints:  val = 3.4E-7
+  based on the actual fingerprints:  val = 1.6E-7
 15828345 states generated, 5395873 distinct states found, 0 states left on queue.
-The depth of the complete state graph search is 73.
+The depth of the complete state graph search is 72.
 The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 6 and the 95th percentile is 3).
-Finished in 29s at (2026-07-20 23:46:39)
+Finished in 29s at (2026-07-21 01:03:20)
