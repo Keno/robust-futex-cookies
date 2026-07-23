@@ -10,7 +10,13 @@ next unlock wakes the next waiter. No exit-walk changes: the existing
 owner-part-zero pending-op wake in `handle_futex_death()` covers a woken
 waiter dying on the released word.
 
-Patches apply to 58717b2a1365 (post 7.2-rc4). Note this does NOT fix the
+Patches apply to 58717b2a1365 (post 7.2-rc4). v2 of the series (2026-07-23)
+restructured for upstream quality: patch 1 factors the wake walk out of
+futex_wake() (no functional change), patch 2 reuses it and replaces the
+two-pass counting with a wake-first design whose fault path re-locks and
+redoes only the remaining-waiter scan + store; the store uses a new
+futex_put_value_locked() helper in futex.h (guard(pagefault) +
+scoped_user_write_access, sibling of futex_get_value_locked()). Note this does NOT fix the
 legacy glibc store-0-then-FUTEX_WAKE protocol (the kernel never writes the
 word there); the story for legacy binaries is adoption of
 FUTEX_ROBUST_UNLOCK.

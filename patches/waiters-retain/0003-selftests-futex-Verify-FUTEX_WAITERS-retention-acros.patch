@@ -1,4 +1,4 @@
-From 63a507579abae77afd822e7738683eb5f4ca144f Mon Sep 17 00:00:00 2001
+From 8f2524c9af052799a748d764654048ba9e96f45d Mon Sep 17 00:00:00 2001
 From: Keno Fischer <keno@juliahub.com>
 To: Thomas Gleixner <tglx@kernel.org>,
     Ingo Molnar <mingo@redhat.com>,
@@ -7,8 +7,8 @@ Cc: Darren Hart <dvhart@infradead.org>,
     Davidlohr Bueso <dave@stgolabs.net>,
     =?UTF-8?q?Andr=C3=A9=20Almeida?= <andrealmeid@igalia.com>,
     linux-kernel@vger.kernel.org
-Date: Thu, 23 Jul 2026 02:33:27 +0000
-Subject: [PATCH 2/2] selftests/futex: Verify FUTEX_WAITERS retention across a
+Date: Thu, 23 Jul 2026 17:19:01 +0000
+Subject: [PATCH 3/3] selftests/futex: Verify FUTEX_WAITERS retention across a
  robust unlock
 
 Exercise the revised FUTEX_ROBUST_UNLOCK semantics: with two waiters
