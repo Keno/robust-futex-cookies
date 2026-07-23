@@ -1,0 +1,280 @@
+From b3a796478f337f7deab0ddaa84689edae2db0679 Mon Sep 17 00:00:00 2001
+From: Keno Fischer <keno@juliahub.com>
+To: Thomas Gleixner <tglx@kernel.org>,
+    Ingo Molnar <mingo@redhat.com>,
+    Peter Zijlstra <peterz@infradead.org>
+Cc: Darren Hart <dvhart@infradead.org>,
+    Davidlohr Bueso <dave@stgolabs.net>,
+    =?UTF-8?q?Andr=C3=A9=20Almeida?= <andrealmeid@igalia.com>,
+    linux-kernel@vger.kernel.org
+Date: Thu, 23 Jul 2026 17:51:57 +0000
+Subject: [PATCH] futex: Retain FUTEX_WAITERS across a contended robust unlock
+
+In the contended unlock path of a futex (using FUTEX_ROBUST_UNLOCK
+for the sake of the present discussion - the legacy path has
+additional races anyway), the kernel will store 0 to release the
+futex word, clean up the robust list pending entry and wake the
+appropriate number of waiting tasks (if any).
+
+However, because userspace does not know if there were any remaining
+waiters on the futex, this opens up a race: After the futex word
+is released, an unrelated thread can perform an uncontended acquire
+without setting FUTEX_WAITERS. If the woken-up thread dies before
+it has a chance to set FUTEX_WAITERS, there is no indication to
+userspace that the next release needs the contended-unlock path and
+thus any remaining waiters will never be woken. An example sequence
+is the following:
+
+  A owns the futex, B and C sleep in FUTEX_WAIT
+                                        uval == A | FUTEX_WAITERS
+  A FUTEX_ROBUST_UNLOCK: store 0, wakes B
+                                        uval == 0
+  D fast path acquire: cmpxchg(0 -> D)
+                                        uval == D, no FUTEX_WAITERS
+  B killed before acting on the wakeup
+  B exit walk, pending op: owner D != B -> no action
+  D unlock: no FUTEX_WAITERS -> no wake
+                                        C sleeps forever
+
+This closes that race by instead having the kernel retain the
+FUTEX_WAITERS bit to indicate whether any waiters remain. Another
+thread is only permitted to perform an uncontended lock if there are
+no remaining waiters. The release store is performed under the futex
+spinlock, and thus synchronizes with the check of the futex word
+in FUTEX_WAIT.
+
+This is a change in the futex protocol. 0|FUTEX_WAITERS was previously
+not a state that was used in the futex state machine (although
+very old glibc versions have a bug that produces it). Userspace
+implementations will need to be adapted to handle this state when
+switching to FUTEX_ROBUST_UNLOCK.
+
+Fixes: 3ca9595d9fb6 ("futex: Add support for unlocking robust futexes")
+Signed-off-by: Keno Fischer <keno@juliahub.com>
+Assisted-by: ClaudeCode:claude-fable-5 tla+
+---
+ Documentation/locking/robust-futex-ABI.rst |  17 ++-
+ kernel/futex/futex.h                       |  12 ++
+ kernel/futex/waitwake.c                    | 123 ++++++++++++++-------
+ 3 files changed, 113 insertions(+), 39 deletions(-)
+
+diff --git a/Documentation/locking/robust-futex-ABI.rst b/Documentation/locking/robust-futex-ABI.rst
+index 5e6a0665b8ba..7e83b3d6f4f0 100644
+--- a/Documentation/locking/robust-futex-ABI.rst
++++ b/Documentation/locking/robust-futex-ABI.rst
+@@ -215,8 +215,21 @@ For the contended unlock case, where other threads are waiting for the lock
+ release, there's the ``FUTEX_ROBUST_UNLOCK`` operation feature flag for the
+ ``futex()`` system call, which must be used with one of the following
+ operations: ``FUTEX_WAKE``, ``FUTEX_WAKE_BITSET`` or ``FUTEX_UNLOCK_PI``.
+-The kernel will release the lock (set the futex word to zero), clean the
+-``list_op_pending`` field. Then, it will proceed with the normal wake path.
++The kernel will release the lock, clean the ``list_op_pending`` field and
++wake the requested number of waiters. The value stored into the futex word
++by the release reflects the remaining contention: if waiters remain queued
++in the kernel after the wakeup, the futex word is set to ``FUTEX_WAITERS``,
++otherwise to zero. This keeps subsequent lock acquisitions on the contended
++path so that every unlock wakes the next waiter, even if a woken waiter is
++killed before it can take over the lock in user space (the released,
++ownerless futex word also lets the robust list exit handling of such a
++waiter wake its successor).
++
++Lock implementations using ``FUTEX_ROBUST_UNLOCK`` must therefore treat a
++futex word whose TID portion is zero as free regardless of the
++``FUTEX_WAITERS`` bit: it is acquired with an atomic compare-and-exchange
++which preserves ``FUTEX_WAITERS``, and a thread must never wait on a futex
++word with a zero TID portion.
+ 
+ For the non-contended path, there's still a race between checking the futex word
+ and clearing the ``list_op_pending`` field. To solve this without the need of a
+diff --git a/kernel/futex/futex.h b/kernel/futex/futex.h
+index f00f0863ed44..367a8eaa650d 100644
+--- a/kernel/futex/futex.h
++++ b/kernel/futex/futex.h
+@@ -305,6 +305,18 @@ static inline int futex_get_value_locked(u32 *dest, u32 __user *from)
+ 	return get_user_inline(*dest, from);
+ }
+ 
++/* Store to user memory with release ordering and pagefaults disabled */
++static inline int futex_put_value_locked(u32 val, u32 __user *to)
++{
++	guard(pagefault)();
++
++	scoped_user_write_access(to, efault)
++		unsafe_atomic_store_release_user(val, to, efault);
++	return 0;
++efault:
++	return -EFAULT;
++}
++
+ extern void __futex_unqueue(struct futex_q *q);
+ extern void __futex_queue(struct futex_q *q, struct futex_hash_bucket *hb,
+ 				struct task_struct *task);
+diff --git a/kernel/futex/waitwake.c b/kernel/futex/waitwake.c
+index d4483d15d30a..2983d6d257b2 100644
+--- a/kernel/futex/waitwake.c
++++ b/kernel/futex/waitwake.c
+@@ -150,26 +150,69 @@ void futex_wake_mark(struct wake_q_head *wake_q, struct futex_q *q)
+ }
+ 
+ /*
+- * If requested, clear the robust list pending op and unlock the futex
++ * Mark up to @nr_wake waiters for wake up. Must be called with @hb->lock held.
++ * Returns the number of marked waiters (or -EINVAL).
+  */
+-static bool futex_robust_unlock(u32 __user *uaddr, unsigned int flags, void __user *pop)
++static int futex_wake_locked(struct futex_hash_bucket *hb, union futex_key *key,
++			     struct wake_q_head *wake_q, int nr_wake, u32 bitset)
+ {
+-	if (!(flags & FLAGS_ROBUST_UNLOCK))
+-		return true;
++	struct futex_q *this, *next;
++	int ret = 0;
+ 
+-	/* First unlock the futex, which requires release semantics. */
+-	scoped_user_write_access(uaddr, efault)
+-		unsafe_atomic_store_release_user(0, uaddr, efault);
++	plist_for_each_entry_safe(this, next, &hb->chain, list) {
++		if (futex_match(&this->key, key)) {
++			if (this->pi_state || this->rt_waiter)
++				return -EINVAL;
+ 
+-	/*
+-	 * Clear the pending list op now. If that fails, then the task is in
+-	 * deeper trouble as the robust list head is usually part of the TLS.
+-	 * The chance of survival is close to zero.
+-	 */
+-	return futex_robust_list_clear_pending(pop, flags);
++			/* Check if one of the bits is set in both bitsets */
++			if (!(this->bitset & bitset))
++				continue;
++
++			this->wake(wake_q, this);
++			if (++ret >= nr_wake)
++				break;
++		}
++	}
++	return ret;
++}
++
++/*
++ * Release the futex word of a robust futex (FUTEX_ROBUST_UNLOCK) by storing
++ * either 0 or (0)|FUTEX_WAITERS depending on the presence of remaining waiters.
++ * Must be called with @hb->lock held. The lock may be dropped and reacquired
++ * to fault in the futex word.
++ */
++static int futex_robust_release(struct futex_hash_bucket *hb, union futex_key *key,
++				u32 __user *uaddr)
++{
++	struct futex_q *this;
++	int ret;
++
++	for (;;) {
++		u32 mval = 0;
++
++		/*
++		 * Check for remaining waiters on this futex. Error
++		 * conditions from futex_wake_locked() are ignored here to
++		 * ensure that the next wake takes the contended path and
++		 * observes those errors.
++		 */
++		plist_for_each_entry(this, &hb->chain, list) {
++			if (futex_match(&this->key, key)) {
++				mval = FUTEX_WAITERS;
++				break;
++			}
++		}
++
++		if (!futex_put_value_locked(mval, uaddr))
++			return 0;
+ 
+-efault:
+-	return false;
++		spin_unlock(&hb->lock);
++		ret = fault_in_user_writeable(uaddr) ? -EFAULT : 0;
++		spin_lock(&hb->lock);
++		if (ret)
++			return ret;
++	}
+ }
+ 
+ /*
+@@ -177,8 +220,9 @@ static bool futex_robust_unlock(u32 __user *uaddr, unsigned int flags, void __us
+  */
+ int futex_wake(u32 __user *uaddr, unsigned int flags, void __user *pop, int nr_wake, u32 bitset)
+ {
++	bool robust = flags & FLAGS_ROBUST_UNLOCK;
++	bool wake = !((flags & FLAGS_STRICT) && !nr_wake);
+ 	union futex_key key = FUTEX_KEY_INIT;
+-	struct futex_q *this, *next;
+ 	DEFINE_WAKE_Q(wake_q);
+ 	int ret;
+ 
+@@ -189,39 +233,44 @@ int futex_wake(u32 __user *uaddr, unsigned int flags, void __user *pop, int nr_w
+ 	if (unlikely(ret != 0))
+ 		return ret;
+ 
+-	if (!futex_robust_unlock(uaddr, flags, pop))
+-		return -EFAULT;
+-
+-	if ((flags & FLAGS_STRICT) && !nr_wake)
++	if (!robust && !wake)
+ 		return 0;
+ 
+ 	CLASS(hbr, hbr)(&key);
+ 	auto hb = hbr.hb;
+ 
+-	/* Make sure we really have tasks to wakeup */
+-	if (!futex_hb_waiters_pending(hb))
+-		return ret;
++	/*
++	 * Make sure we really have tasks to wakeup. No fast path for @robust,
++	 * the unlock needs to happen regardless.
++	 */
++	if (!robust && !futex_hb_waiters_pending(hb))
++		return 0;
+ 
+ 	spin_lock(&hb->lock);
+ 
+-	plist_for_each_entry_safe(this, next, &hb->chain, list) {
+-		if (futex_match (&this->key, &key)) {
+-			if (this->pi_state || this->rt_waiter) {
+-				ret = -EINVAL;
+-				break;
+-			}
++	if (wake)
++		ret = futex_wake_locked(hb, &key, &wake_q, nr_wake, bitset);
+ 
+-			/* Check if one of the bits is set in both bitsets */
+-			if (!(this->bitset & bitset))
+-				continue;
+-
+-			this->wake(&wake_q, this);
+-			if (++ret >= nr_wake)
+-				break;
+-		}
++	if (robust && futex_robust_release(hb, &key, uaddr)) {
++		spin_unlock(&hb->lock);
++		/*
++		 * The futex word could not be released. Keep the pending list armed.
++		 */
++		ret = -EFAULT;
++		goto out;
+ 	}
+ 
+ 	spin_unlock(&hb->lock);
++
++	/*
++	 * With the futex word released, clear the pending list op now. If
++	 * that fails, then the task is in deeper trouble as the robust list
++	 * head is usually part of the TLS. The chance of survival is close
++	 * to zero.
++	 */
++	if (robust && !futex_robust_list_clear_pending(pop, flags))
++		ret = -EFAULT;
++out:
+ 	wake_up_q(&wake_q);
+ 	return ret;
+ }
+-- 
+2.54.0
+
