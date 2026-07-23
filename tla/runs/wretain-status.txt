@@ -1,4 +1,5 @@
 EXIT:13 MCWRetainNoRetain
 EXIT:13 MCWRetainUnsync
 EXIT:13 MCWRetainNoExitWake
+EXIT:0 MCWRetainNoAssume
 EXIT:0 MCWRetainOK

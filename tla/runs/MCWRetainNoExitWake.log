@@ -1,14 +1,14 @@
 TLC2 Version 2026.07.15.134331 (rev: 227f61b)
-Running breadth-first search Model-Checking with fp 73 and seed 1339884400713426597 with 8 workers on 128 cores with 27305MB heap and 64MB offheap memory [pid: 164037] (Linux 6.8.0-134-generic amd64, Debian 11.0.24 64bit, MSBDiskFPSet, DiskStateQueue).
+Running breadth-first search Model-Checking with fp 4 and seed 7437988395212411897 with 8 workers on 128 cores with 27305MB heap and 64MB offheap memory [pid: 30336] (Linux 6.8.0-134-generic amd64, Debian 11.0.24 64bit, MSBDiskFPSet, DiskStateQueue).
 Parsing file /workspace/robust-futex-work/tla/MCWRetainNoExitWake.tla
 Parsing file /workspace/robust-futex-work/tla/WaitersRetain.tla
-Parsing file /tmp/tlc-10069731015660460834/_TLCTrace.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
-Parsing file /tmp/tlc-10069731015660460834/Naturals.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
-Parsing file /tmp/tlc-10069731015660460834/Sequences.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
-Parsing file /tmp/tlc-10069731015660460834/FiniteSets.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
-Parsing file /tmp/tlc-10069731015660460834/TLC.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
-Parsing file /tmp/tlc-10069731015660460834/TLCExt.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
-Parsing file /tmp/tlc-10069731015660460834/Integers.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Parsing file /tmp/tlc-15830503834232745629/_TLCTrace.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-15830503834232745629/Naturals.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-15830503834232745629/Sequences.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-15830503834232745629/FiniteSets.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-15830503834232745629/TLC.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-15830503834232745629/TLCExt.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-15830503834232745629/Integers.tla (jar:file:/workspace/robust-futex-work/tla/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
 Semantic processing of module Naturals
 Semantic processing of module Sequences
 Semantic processing of module FiniteSets
@@ -22,14 +22,14 @@ Linting of module WaitersRetain
 Linting of module TLCExt
 Linting of module _TLCTrace
 Linting of module MCWRetainNoExitWake
-Starting... (2026-07-23 03:48:50)
+Starting... (2026-07-23 19:35:47)
 Implied-temporal checking--satisfiability problem has 3 branches.
 Computing initial states...
-Finished computing initial states: 1 distinct state generated at 2026-07-23 03:48:50.
-Checking 3 branches of temporal properties for the current state space with 96879 total distinct states at (2026-07-23 03:48:53)
-Finished checking temporal properties in 00s at 2026-07-23 03:48:53
-Progress(16) at 2026-07-23 03:48:53: 80,285 states generated (80,285 s/min), 32,294 distinct states found (32,294 ds/min), 11,942 states left on queue.
-Checking 3 branches of temporal properties for the current state space with 5051175 total distinct states at (2026-07-23 03:49:53)
+Finished computing initial states: 1 distinct state generated at 2026-07-23 19:35:47.
+Checking 3 branches of temporal properties for the current state space with 92037 total distinct states at (2026-07-23 19:35:50)
+Finished checking temporal properties in 00s at 2026-07-23 19:35:51
+Progress(16) at 2026-07-23 19:35:51: 76,358 states generated (76,358 s/min), 30,681 distinct states found (30,681 ds/min), 11,380 states left on queue.
+Checking 3 branches of temporal properties for the current state space with 4902435 total distinct states at (2026-07-23 19:36:51)
 Error: Temporal property WaiterServed was violated.
 
 Error: The following behavior constitutes a counter-example:
@@ -52,7 +52,7 @@ State 1: <Initial predicate>
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"run", "run", "run">>
 
-State 2: <StartAcq(1) line 153, col 5 to line 158, col 64 of module WaitersRetain>
+State 2: <StartAcq(1) line 164, col 5 to line 169, col 64 of module WaitersRetain>
 /\ word = [own |-> 0, od |-> FALSE, wtr |-> FALSE]
 /\ alive = <<TRUE, TRUE, TRUE>>
 /\ q = <<>>
@@ -70,13 +70,13 @@ State 2: <StartAcq(1) line 153, col 5 to line 158, col 64 of module WaitersRetai
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"run", "run", "run">>
 
-State 3: <StartAcq(2) line 153, col 5 to line 158, col 64 of module WaitersRetain>
+State 3: <StartAcq(3) line 164, col 5 to line 169, col 64 of module WaitersRetain>
 /\ word = [own |-> 0, od |-> FALSE, wtr |-> FALSE]
 /\ alive = <<TRUE, TRUE, TRUE>>
 /\ q = <<>>
-/\ pc = <<"acq", "acq", "idle">>
+/\ pc = <<"acq", "idle", "acq">>
 /\ waited = <<FALSE, FALSE, FALSE>>
-/\ pending = <<TRUE, TRUE, FALSE>>
+/\ pending = <<TRUE, FALSE, TRUE>>
 /\ assume_w = <<FALSE, FALSE, FALSE>>
 /\ srem = <<FALSE, FALSE, FALSE>>
 /\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
@@ -88,7 +88,7 @@ State 3: <StartAcq(2) line 153, col 5 to line 158, col 64 of module WaitersRetai
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"run", "run", "run">>
 
-State 4: <StartAcq(3) line 153, col 5 to line 158, col 64 of module WaitersRetain>
+State 4: <StartAcq(2) line 164, col 5 to line 169, col 64 of module WaitersRetain>
 /\ word = [own |-> 0, od |-> FALSE, wtr |-> FALSE]
 /\ alive = <<TRUE, TRUE, TRUE>>
 /\ q = <<>>
@@ -106,11 +106,11 @@ State 4: <StartAcq(3) line 153, col 5 to line 158, col 64 of module WaitersRetai
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"run", "run", "run">>
 
-State 5: <TryAcquire(1) line 166, col 5 to line 172, col 31 of module WaitersRetain>
-/\ word = [own |-> 1, od |-> FALSE, wtr |-> FALSE]
+State 5: <TryAcquire(3) line 177, col 5 to line 183, col 31 of module WaitersRetain>
+/\ word = [own |-> 3, od |-> FALSE, wtr |-> FALSE]
 /\ alive = <<TRUE, TRUE, TRUE>>
 /\ q = <<>>
-/\ pc = <<"acquired", "acq", "acq">>
+/\ pc = <<"acq", "acq", "acquired">>
 /\ waited = <<FALSE, FALSE, FALSE>>
 /\ pending = <<TRUE, TRUE, TRUE>>
 /\ assume_w = <<FALSE, FALSE, FALSE>>
@@ -124,287 +124,179 @@ State 5: <TryAcquire(1) line 166, col 5 to line 172, col 31 of module WaitersRet
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"run", "run", "run">>
 
-State 6: <Die(1) line 340, col 5 to line 346, col 26 of module WaitersRetain>
-/\ word = [own |-> 1, od |-> FALSE, wtr |-> FALSE]
-/\ alive = <<FALSE, TRUE, TRUE>>
-/\ q = <<>>
-/\ pc = <<"acquired", "acq", "acq">>
-/\ waited = <<FALSE, FALSE, FALSE>>
-/\ pending = <<TRUE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, FALSE, FALSE>>
-/\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ enq = <<FALSE, FALSE, FALSE>>
-/\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ wpc = <<"e_read", "run", "run">>
-
-State 7: <WalkEntryRead(1) line 351, col 5 to line 358, col 31 of module WaitersRetain>
-/\ word = [own |-> 1, od |-> FALSE, wtr |-> FALSE]
-/\ alive = <<FALSE, TRUE, TRUE>>
-/\ q = <<>>
-/\ pc = <<"acquired", "acq", "acq">>
-/\ waited = <<FALSE, FALSE, FALSE>>
-/\ pending = <<TRUE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, FALSE, FALSE>>
-/\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ enq = <<FALSE, FALSE, FALSE>>
-/\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ wpc = <<"p_read", "run", "run">>
-
-State 8: <SetWtr(2) line 187, col 5 to line 193, col 69 of module WaitersRetain>
-/\ word = [own |-> 1, od |-> FALSE, wtr |-> TRUE]
-/\ alive = <<FALSE, TRUE, TRUE>>
-/\ q = <<>>
-/\ pc = <<"acquired", "waitpre", "acq">>
-/\ waited = <<FALSE, FALSE, FALSE>>
-/\ pending = <<TRUE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, TRUE, FALSE>>
-/\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ enq = <<FALSE, FALSE, FALSE>>
-/\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ wpc = <<"p_read", "run", "run">>
-
-State 9: <SnapWait(3) line 197, col 5 to line 202, col 75 of module WaitersRetain>
-/\ word = [own |-> 1, od |-> FALSE, wtr |-> TRUE]
-/\ alive = <<FALSE, TRUE, TRUE>>
-/\ q = <<>>
-/\ pc = <<"acquired", "waitpre", "waitpre">>
-/\ waited = <<FALSE, FALSE, FALSE>>
-/\ pending = <<TRUE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, TRUE, TRUE>>
-/\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE] >>
-/\ enq = <<FALSE, FALSE, FALSE>>
-/\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ wpc = <<"p_read", "run", "run">>
-
-State 10: <WalkPendingRead(1) line 394, col 5 to line 401, col 31 of module WaitersRetain>
-/\ word = [own |-> 1, od |-> FALSE, wtr |-> TRUE]
-/\ alive = <<FALSE, TRUE, TRUE>>
-/\ q = <<>>
-/\ pc = <<"acquired", "waitpre", "waitpre">>
-/\ waited = <<FALSE, FALSE, FALSE>>
-/\ pending = <<TRUE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, TRUE, TRUE>>
-/\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE] >>
-/\ enq = <<FALSE, FALSE, FALSE>>
-/\ wsnap = << [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ wpc = <<"p_chk", "run", "run">>
-
-State 11: <FutexWait(3) line 210, col 5 to line 219, col 26 of module WaitersRetain>
-/\ word = [own |-> 1, od |-> FALSE, wtr |-> TRUE]
-/\ alive = <<FALSE, TRUE, TRUE>>
-/\ q = <<3>>
-/\ pc = <<"acquired", "waitpre", "sleeping">>
-/\ waited = <<FALSE, FALSE, TRUE>>
-/\ pending = <<TRUE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, TRUE, TRUE>>
-/\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE] >>
-/\ enq = <<FALSE, FALSE, FALSE>>
-/\ wsnap = << [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ wpc = <<"p_chk", "run", "run">>
-
-State 12: <FutexWait(2) line 210, col 5 to line 219, col 26 of module WaitersRetain>
-/\ word = [own |-> 1, od |-> FALSE, wtr |-> TRUE]
-/\ alive = <<FALSE, TRUE, TRUE>>
-/\ q = <<3, 2>>
-/\ pc = <<"acquired", "sleeping", "sleeping">>
-/\ waited = <<FALSE, TRUE, TRUE>>
-/\ pending = <<TRUE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, TRUE, TRUE>>
-/\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE] >>
-/\ enq = <<FALSE, FALSE, FALSE>>
-/\ wsnap = << [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ wpc = <<"p_chk", "run", "run">>
-
-State 13: <WalkPendingChk(1) line 409, col 5 to line 427, col 25 of module WaitersRetain>
-/\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
-/\ alive = <<FALSE, TRUE, TRUE>>
-/\ q = <<3, 2>>
-/\ pc = <<"acquired", "sleeping", "sleeping">>
-/\ waited = <<FALSE, TRUE, TRUE>>
-/\ pending = <<TRUE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, TRUE, TRUE>>
-/\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE] >>
-/\ enq = <<FALSE, FALSE, FALSE>>
-/\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ wpc = <<"p_wake", "run", "run">>
-
-State 14: <WalkPendingWake(1) line 431, col 5 to line 439, col 26 of module WaitersRetain>
-/\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
-/\ alive = <<FALSE, TRUE, TRUE>>
-/\ q = <<2>>
-/\ pc = <<"acquired", "sleeping", "acq">>
-/\ waited = <<FALSE, TRUE, TRUE>>
-/\ pending = <<TRUE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, TRUE, TRUE>>
-/\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE] >>
-/\ enq = <<FALSE, FALSE, FALSE>>
-/\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ wpc = <<"done", "run", "run">>
-
-State 15: <Reincarnate(1) line 443, col 5 to line 454, col 28 of module WaitersRetain>
-/\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
+State 6: <SetWtr(1) line 198, col 5 to line 204, col 69 of module WaitersRetain>
+/\ word = [own |-> 3, od |-> FALSE, wtr |-> TRUE]
 /\ alive = <<TRUE, TRUE, TRUE>>
-/\ q = <<2>>
-/\ pc = <<"idle", "sleeping", "acq">>
-/\ waited = <<FALSE, TRUE, TRUE>>
-/\ pending = <<FALSE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, TRUE, TRUE>>
+/\ q = <<>>
+/\ pc = <<"waitpre", "acq", "acquired">>
+/\ waited = <<FALSE, FALSE, FALSE>>
+/\ pending = <<TRUE, TRUE, TRUE>>
+/\ assume_w = <<TRUE, FALSE, FALSE>>
 /\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE] >>
+/\ expw = << [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ enq = <<FALSE, FALSE, FALSE>>
 /\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"run", "run", "run">>
 
-State 16: <Die(3) line 340, col 5 to line 346, col 26 of module WaitersRetain>
-/\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
+State 7: <SnapWait(2) line 208, col 5 to line 213, col 75 of module WaitersRetain>
+/\ word = [own |-> 3, od |-> FALSE, wtr |-> TRUE]
+/\ alive = <<TRUE, TRUE, TRUE>>
+/\ q = <<>>
+/\ pc = <<"waitpre", "waitpre", "acquired">>
+/\ waited = <<FALSE, FALSE, FALSE>>
+/\ pending = <<TRUE, TRUE, TRUE>>
+/\ assume_w = <<TRUE, TRUE, FALSE>>
+/\ srem = <<FALSE, FALSE, FALSE>>
+/\ expw = << [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
+/\ enq = <<FALSE, FALSE, FALSE>>
+/\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
+/\ wpc = <<"run", "run", "run">>
+
+State 8: <FutexWait(1) line 221, col 5 to line 230, col 26 of module WaitersRetain>
+/\ word = [own |-> 3, od |-> FALSE, wtr |-> TRUE]
+/\ alive = <<TRUE, TRUE, TRUE>>
+/\ q = <<1>>
+/\ pc = <<"sleeping", "waitpre", "acquired">>
+/\ waited = <<TRUE, FALSE, FALSE>>
+/\ pending = <<TRUE, TRUE, TRUE>>
+/\ assume_w = <<TRUE, TRUE, FALSE>>
+/\ srem = <<FALSE, FALSE, FALSE>>
+/\ expw = << [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
+/\ enq = <<FALSE, FALSE, FALSE>>
+/\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
+/\ wpc = <<"run", "run", "run">>
+
+State 9: <Die(3) line 351, col 5 to line 357, col 26 of module WaitersRetain>
+/\ word = [own |-> 3, od |-> FALSE, wtr |-> TRUE]
 /\ alive = <<TRUE, TRUE, FALSE>>
-/\ q = <<2>>
-/\ pc = <<"idle", "sleeping", "acq">>
-/\ waited = <<FALSE, TRUE, TRUE>>
-/\ pending = <<FALSE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, TRUE, TRUE>>
+/\ q = <<1>>
+/\ pc = <<"sleeping", "waitpre", "acquired">>
+/\ waited = <<TRUE, FALSE, FALSE>>
+/\ pending = <<TRUE, TRUE, TRUE>>
+/\ assume_w = <<TRUE, TRUE, FALSE>>
 /\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE] >>
+/\ expw = << [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ enq = <<FALSE, FALSE, FALSE>>
 /\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"run", "run", "e_read">>
 
-State 17: <WalkEntryRead(3) line 351, col 5 to line 358, col 31 of module WaitersRetain>
-/\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
+State 10: <WalkEntryRead(3) line 362, col 5 to line 369, col 31 of module WaitersRetain>
+/\ word = [own |-> 3, od |-> FALSE, wtr |-> TRUE]
 /\ alive = <<TRUE, TRUE, FALSE>>
-/\ q = <<2>>
-/\ pc = <<"idle", "sleeping", "acq">>
-/\ waited = <<FALSE, TRUE, TRUE>>
-/\ pending = <<FALSE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, TRUE, TRUE>>
+/\ q = <<1>>
+/\ pc = <<"sleeping", "waitpre", "acquired">>
+/\ waited = <<TRUE, FALSE, FALSE>>
+/\ pending = <<TRUE, TRUE, TRUE>>
+/\ assume_w = <<TRUE, TRUE, FALSE>>
 /\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE] >>
+/\ expw = << [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ enq = <<FALSE, FALSE, FALSE>>
 /\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"run", "run", "p_read">>
 
-State 18: <WalkPendingRead(3) line 394, col 5 to line 401, col 31 of module WaitersRetain>
-/\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
+State 11: <WalkPendingRead(3) line 405, col 5 to line 412, col 31 of module WaitersRetain>
+/\ word = [own |-> 3, od |-> FALSE, wtr |-> TRUE]
 /\ alive = <<TRUE, TRUE, FALSE>>
-/\ q = <<2>>
-/\ pc = <<"idle", "sleeping", "acq">>
-/\ waited = <<FALSE, TRUE, TRUE>>
-/\ pending = <<FALSE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, TRUE, TRUE>>
+/\ q = <<1>>
+/\ pc = <<"sleeping", "waitpre", "acquired">>
+/\ waited = <<TRUE, FALSE, FALSE>>
+/\ pending = <<TRUE, TRUE, TRUE>>
+/\ assume_w = <<TRUE, TRUE, FALSE>>
 /\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE] >>
+/\ expw = << [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ enq = <<FALSE, FALSE, FALSE>>
 /\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> TRUE, wtr |-> TRUE] >>
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE] >>
 /\ wpc = <<"run", "run", "p_chk">>
 
-State 19: <StartAcq(1) line 153, col 5 to line 158, col 64 of module WaitersRetain>
-/\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
+State 12: <FutexWait(2) line 221, col 5 to line 230, col 26 of module WaitersRetain>
+/\ word = [own |-> 3, od |-> FALSE, wtr |-> TRUE]
 /\ alive = <<TRUE, TRUE, FALSE>>
-/\ q = <<2>>
-/\ pc = <<"acq", "sleeping", "acq">>
-/\ waited = <<FALSE, TRUE, TRUE>>
+/\ q = <<1, 2>>
+/\ pc = <<"sleeping", "sleeping", "acquired">>
+/\ waited = <<TRUE, TRUE, FALSE>>
 /\ pending = <<TRUE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, TRUE, TRUE>>
+/\ assume_w = <<TRUE, TRUE, FALSE>>
 /\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE] >>
+/\ expw = << [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ enq = <<FALSE, FALSE, FALSE>>
 /\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> TRUE, wtr |-> TRUE] >>
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE] >>
 /\ wpc = <<"run", "run", "p_chk">>
 
-State 20: <WalkPendingChk(3) line 409, col 5 to line 427, col 25 of module WaitersRetain>
+State 13: <WalkPendingChk(3) line 420, col 5 to line 438, col 25 of module WaitersRetain>
+/\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
+/\ alive = <<TRUE, TRUE, FALSE>>
+/\ q = <<1, 2>>
+/\ pc = <<"sleeping", "sleeping", "acquired">>
+/\ waited = <<TRUE, TRUE, FALSE>>
+/\ pending = <<TRUE, TRUE, TRUE>>
+/\ assume_w = <<TRUE, TRUE, FALSE>>
+/\ srem = <<FALSE, FALSE, FALSE>>
+/\ expw = << [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
+/\ enq = <<FALSE, FALSE, FALSE>>
+/\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
+/\ wpc = <<"run", "run", "p_wake">>
+
+State 14: <WalkPendingWake(3) line 442, col 5 to line 450, col 26 of module WaitersRetain>
 /\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
 /\ alive = <<TRUE, TRUE, FALSE>>
 /\ q = <<2>>
-/\ pc = <<"acq", "sleeping", "acq">>
-/\ waited = <<FALSE, TRUE, TRUE>>
+/\ pc = <<"acq", "sleeping", "acquired">>
+/\ waited = <<TRUE, TRUE, FALSE>>
 /\ pending = <<TRUE, TRUE, TRUE>>
-/\ assume_w = <<FALSE, TRUE, TRUE>>
+/\ assume_w = <<TRUE, TRUE, FALSE>>
 /\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE] >>
+/\ expw = << [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ enq = <<FALSE, FALSE, FALSE>>
 /\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"run", "run", "done">>
 
-State 21: <Reincarnate(3) line 443, col 5 to line 454, col 28 of module WaitersRetain>
+State 15: <Reincarnate(3) line 454, col 5 to line 465, col 28 of module WaitersRetain>
 /\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
 /\ alive = <<TRUE, TRUE, TRUE>>
 /\ q = <<2>>
 /\ pc = <<"acq", "sleeping", "idle">>
-/\ waited = <<FALSE, TRUE, FALSE>>
+/\ waited = <<TRUE, TRUE, FALSE>>
 /\ pending = <<TRUE, TRUE, FALSE>>
-/\ assume_w = <<FALSE, TRUE, FALSE>>
+/\ assume_w = <<TRUE, TRUE, FALSE>>
 /\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
+/\ expw = << [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ enq = <<FALSE, FALSE, FALSE>>
 /\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
@@ -412,17 +304,17 @@ State 21: <Reincarnate(3) line 443, col 5 to line 454, col 28 of module WaitersR
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"run", "run", "run">>
 
-State 22: <Die(1) line 340, col 5 to line 346, col 26 of module WaitersRetain>
+State 16: <Die(1) line 351, col 5 to line 357, col 26 of module WaitersRetain>
 /\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
 /\ alive = <<FALSE, TRUE, TRUE>>
 /\ q = <<2>>
 /\ pc = <<"acq", "sleeping", "idle">>
-/\ waited = <<FALSE, TRUE, FALSE>>
+/\ waited = <<TRUE, TRUE, FALSE>>
 /\ pending = <<TRUE, TRUE, FALSE>>
-/\ assume_w = <<FALSE, TRUE, FALSE>>
+/\ assume_w = <<TRUE, TRUE, FALSE>>
 /\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
+/\ expw = << [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ enq = <<FALSE, FALSE, FALSE>>
 /\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
@@ -430,17 +322,17 @@ State 22: <Die(1) line 340, col 5 to line 346, col 26 of module WaitersRetain>
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"e_read", "run", "run">>
 
-State 23: <WalkEntryRead(1) line 351, col 5 to line 358, col 31 of module WaitersRetain>
+State 17: <WalkEntryRead(1) line 362, col 5 to line 369, col 31 of module WaitersRetain>
 /\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
 /\ alive = <<FALSE, TRUE, TRUE>>
 /\ q = <<2>>
 /\ pc = <<"acq", "sleeping", "idle">>
-/\ waited = <<FALSE, TRUE, FALSE>>
+/\ waited = <<TRUE, TRUE, FALSE>>
 /\ pending = <<TRUE, TRUE, FALSE>>
-/\ assume_w = <<FALSE, TRUE, FALSE>>
+/\ assume_w = <<TRUE, TRUE, FALSE>>
 /\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
+/\ expw = << [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ enq = <<FALSE, FALSE, FALSE>>
 /\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
@@ -448,17 +340,17 @@ State 23: <WalkEntryRead(1) line 351, col 5 to line 358, col 31 of module Waiter
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"p_read", "run", "run">>
 
-State 24: <WalkPendingRead(1) line 394, col 5 to line 401, col 31 of module WaitersRetain>
+State 18: <WalkPendingRead(1) line 405, col 5 to line 412, col 31 of module WaitersRetain>
 /\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
 /\ alive = <<FALSE, TRUE, TRUE>>
 /\ q = <<2>>
 /\ pc = <<"acq", "sleeping", "idle">>
-/\ waited = <<FALSE, TRUE, FALSE>>
+/\ waited = <<TRUE, TRUE, FALSE>>
 /\ pending = <<TRUE, TRUE, FALSE>>
-/\ assume_w = <<FALSE, TRUE, FALSE>>
+/\ assume_w = <<TRUE, TRUE, FALSE>>
 /\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
+/\ expw = << [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ enq = <<FALSE, FALSE, FALSE>>
 /\ wsnap = << [own |-> 0, od |-> TRUE, wtr |-> TRUE],
@@ -466,17 +358,17 @@ State 24: <WalkPendingRead(1) line 394, col 5 to line 401, col 31 of module Wait
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"p_chk", "run", "run">>
 
-State 25: <WalkPendingChk(1) line 409, col 5 to line 427, col 25 of module WaitersRetain>
+State 19: <WalkPendingChk(1) line 420, col 5 to line 438, col 25 of module WaitersRetain>
 /\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
 /\ alive = <<FALSE, TRUE, TRUE>>
 /\ q = <<2>>
 /\ pc = <<"acq", "sleeping", "idle">>
-/\ waited = <<FALSE, TRUE, FALSE>>
+/\ waited = <<TRUE, TRUE, FALSE>>
 /\ pending = <<TRUE, TRUE, FALSE>>
-/\ assume_w = <<FALSE, TRUE, FALSE>>
+/\ assume_w = <<TRUE, TRUE, FALSE>>
 /\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
+/\ expw = << [own |-> 3, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ enq = <<FALSE, FALSE, FALSE>>
 /\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
@@ -484,7 +376,7 @@ State 25: <WalkPendingChk(1) line 409, col 5 to line 427, col 25 of module Waite
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"done", "run", "run">>
 
-State 26: <Reincarnate(1) line 443, col 5 to line 454, col 28 of module WaitersRetain>
+State 20: <Reincarnate(1) line 454, col 5 to line 465, col 28 of module WaitersRetain>
 /\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
 /\ alive = <<TRUE, TRUE, TRUE>>
 /\ q = <<2>>
@@ -494,7 +386,7 @@ State 26: <Reincarnate(1) line 443, col 5 to line 454, col 28 of module WaitersR
 /\ assume_w = <<FALSE, TRUE, FALSE>>
 /\ srem = <<FALSE, FALSE, FALSE>>
 /\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
+   [own |-> 3, od |-> FALSE, wtr |-> TRUE],
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ enq = <<FALSE, FALSE, FALSE>>
 /\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
@@ -502,64 +394,9 @@ State 26: <Reincarnate(1) line 443, col 5 to line 454, col 28 of module WaitersR
    [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
 /\ wpc = <<"run", "run", "run">>
 
-State 27: <StartAcq(1) line 153, col 5 to line 158, col 64 of module WaitersRetain>
-/\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
-/\ alive = <<TRUE, TRUE, TRUE>>
-/\ q = <<2>>
-/\ pc = <<"acq", "sleeping", "idle">>
-/\ waited = <<FALSE, TRUE, FALSE>>
-/\ pending = <<TRUE, TRUE, FALSE>>
-/\ assume_w = <<FALSE, TRUE, FALSE>>
-/\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ enq = <<FALSE, FALSE, FALSE>>
-/\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ wpc = <<"run", "run", "run">>
-
-State 28: <Die(1) line 340, col 5 to line 346, col 26 of module WaitersRetain>
-/\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
-/\ alive = <<FALSE, TRUE, TRUE>>
-/\ q = <<2>>
-/\ pc = <<"acq", "sleeping", "idle">>
-/\ waited = <<FALSE, TRUE, FALSE>>
-/\ pending = <<TRUE, TRUE, FALSE>>
-/\ assume_w = <<FALSE, TRUE, FALSE>>
-/\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ enq = <<FALSE, FALSE, FALSE>>
-/\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ wpc = <<"e_read", "run", "run">>
-
-State 29: <WalkEntryRead(1) line 351, col 5 to line 358, col 31 of module WaitersRetain>
-/\ word = [own |-> 0, od |-> TRUE, wtr |-> TRUE]
-/\ alive = <<FALSE, TRUE, TRUE>>
-/\ q = <<2>>
-/\ pc = <<"acq", "sleeping", "idle">>
-/\ waited = <<FALSE, TRUE, FALSE>>
-/\ pending = <<TRUE, TRUE, FALSE>>
-/\ assume_w = <<FALSE, TRUE, FALSE>>
-/\ srem = <<FALSE, FALSE, FALSE>>
-/\ expw = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 1, od |-> FALSE, wtr |-> TRUE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ enq = <<FALSE, FALSE, FALSE>>
-/\ wsnap = << [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE],
-   [own |-> 0, od |-> FALSE, wtr |-> FALSE] >>
-/\ wpc = <<"p_read", "run", "run">>
-
-Back to state 24: <WalkPendingRead(1) line 394, col 5 to line 401, col 31 of module WaitersRetain>
-
-Finished checking temporal properties in 03s at 2026-07-23 03:49:57
-4710351 states generated, 1683725 distinct states found, 399353 states left on queue.
+State 21: Stuttering
+Finished checking temporal properties in 01s at 2026-07-23 19:36:52
+4565271 states generated, 1634145 distinct states found, 390956 states left on queue.
 The depth of the complete state graph search is 27.
-Finished in 01min 07s at (2026-07-23 03:49:57)
-Trace exploration spec path: ./MCWRetainNoExitWake_TTrace_1784778529.tla
+Finished in 01min 05s at (2026-07-23 19:36:52)
+Trace exploration spec path: ./MCWRetainNoExitWake_TTrace_1784835347.tla

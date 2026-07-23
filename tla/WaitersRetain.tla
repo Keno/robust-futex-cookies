@@ -78,6 +78,14 @@
 (*     the wakeup when the woken waiter dies while the word is released   *)
 (*     (owner part 0, WAITERS possibly still set). FALSE lets TLC          *)
 (*     demonstrate that dependency.                                        *)
+(*                                                                         *)
+(*   AssumeWaiters = TRUE models glibc's assume_other_futex_waiters: an   *)
+(*     acquirer re-asserts WAITERS whenever it may have shared the bit    *)
+(*     (required under the store-zero semantics, glibc bug 20973). FALSE  *)
+(*     models acquirers which only preserve the WAITERS bit they observe  *)
+(*     in the futex word. With RetainWaiters this passes: the kernel      *)
+(*     keeps the word authoritative, so the private re-assertion is no    *)
+(*     longer needed.                                                      *)
 (***************************************************************************)
 EXTENDS Naturals, Sequences, FiniteSets
 
@@ -85,7 +93,10 @@ CONSTANTS
     Threads,            \* set of thread identifiers (naturals, TID values)
     RetainWaiters,      \* BOOLEAN: retain WAITERS on kernel robust unlock
     SyncStore,          \* BOOLEAN: count+store+wake atomic under hb lock
-    ExitWakeOwnerZero   \* BOOLEAN: pending-op wake on owner part == 0
+    ExitWakeOwnerZero,  \* BOOLEAN: pending-op wake on owner part == 0
+    AssumeWaiters       \* BOOLEAN: acquirers re-assert WAITERS from private
+                        \* knowledge (glibc assume_other_futex_waiters);
+                        \* FALSE = acquirers only preserve the observed bit
 
 VARIABLES
     word,       \* futex word: [own : Nat, od : BOOLEAN, wtr : BOOLEAN]
@@ -166,7 +177,7 @@ TryAcquire(t) ==
     /\ alive[t] /\ pc[t] = "acq"
     /\ word.own = 0
     /\ word' = [own |-> t, od |-> FALSE,
-                wtr |-> word.wtr \/ assume_w[t]]
+                wtr |-> word.wtr \/ (AssumeWaiters /\ assume_w[t])]
     /\ pc' = [pc EXCEPT ![t] = "acquired"]
     /\ UNCHANGED <<q, alive, pending, enq, assume_w, waited, expw, srem,
                    wpc, wsnap>>
