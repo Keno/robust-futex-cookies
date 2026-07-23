@@ -79,3 +79,31 @@ libc/bionic/pthread_mutex.cpp) - out of scope.
   apparent owner death: spurious EOWNERDEAD recovery on clean state, and
   apps legitimately responding "unrecoverable" (unlock without
   consistent) poison the mutex to ENOTRECOVERABLE for all participants.
+
+## musl: no _m_type version channel, but a lock-word sentinel
+
+Complete _m_type consumer inventory (all robust-capable versions): C11
+mtx_* compare == PTHREAD_MUTEX_NORMAL; everything else is mask tests
+(&15, &3, &4, &8, &12, &128, &(8|128)) plus `_m_type > 128` in destroy
+(only adds __vm_wait). Validation happens only at the attr level
+(settype rejects >2, setrobust probes the kernel); init copies
+attr->__attr verbatim and no object-level check exists. Unknown bits
+are invisible to every deployed musl: usable as a marker for new musl,
+never as a gate for old musl.
+
+The one universal fail-loud path is in the word, not the type:
+TID portion 0x3fffffff -> ENOTRECOVERABLE from every robust
+lock/trylock/timedlock (checked above the EBUSY test in
+trylock_owner), EPERM from unlock, EPERM/EINVAL from consistent - and
+the sentinel is kernel-inert (0x3fffffff exceeds PID_MAX_LIMIT). A v2
+object format could park the legacy word at the sentinel permanently
+and keep the real futex word elsewhere: 64-bit musl has spare space
+(__u.__i[3]/__i[4]); 32-bit would have to overlay _m_count (dead for
+non-recursive kinds). The blocker is classic robust-list addressing:
+robust_list_head.futex_offset is one global offset per list, so old-
+and new-format objects cannot coexist on one thread's list - a
+relocated word requires per-entry addressing or a second list, i.e.
+the robust_list_head2 territory of the cookie series. Practical musl
+story remains: one-line tolerance fix (EOWNERDEAD keyed on the
+OWNER_DIED bit), backportable; its legacy failure mode is mild enough
+that a loud gate is not required the way it is for glibc.
