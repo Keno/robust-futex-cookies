@@ -107,3 +107,74 @@ the robust_list_head2 territory of the cookie series. Practical musl
 story remains: one-line tolerance fix (EOWNERDEAD keyed on the
 OWNER_DIED bit), backportable; its legacy failure mode is mild enough
 that a loud gate is not required the way it is for glibc.
+
+## ABI history: both libcs already assume same-version sharers
+
+glibc events (verified at release tags):
+- 2.4->2.5 (2006): kind value 16 re-pointed from a userspace-list,
+  private-only robust mechanism (ROBUST_PRIVATE_*) to the kernel robust
+  list protocol (ROBUST_NORMAL_*). Same enum value, new mechanism -
+  sound only because 2.4 robust objects could not be process-shared.
+- 2.7 (2007): PTHREAD_MUTEX_PSHARED_BIT=128 stuffed into __kind and the
+  `& 127` TYPE mask introduced together with private futexes. Two-way
+  pshared flag-day: <=2.6 (full-kind switch) hits default:EINVAL on any
+  >=2.7-initialized pshared mutex (loud); >=2.7 treats <=2.6-initialized
+  pshared mutexes (no bit 128) as PRIVATE futexes, so cross-process
+  waits/wakes silently stop pairing (hangs).
+- 2.18 (2013): elision bits 256/512 written into the shared __kind at
+  runtime on first lock (force-elision.h) - deliberately outside &127 so
+  old versions ignore them; the write was a plain (racy) store until the
+  BZ#23861 atomics conversion in 2.28.
+- 2.25 (2017), BZ#20985: the x86 assembly robust unlock had set the
+  futex word to FUTEX_WAITERS|0 as an intermediate state since 2.5; a
+  kill in the window made it permanent, the kernel would not flag
+  OWNER_DIED ("0 is not equal to the TID"), and glibc's own lock paths
+  could not acquire the state. Fixed by REMOVING THE PRODUCER only -
+  the consumer-side hang exists to this day (verified empirically
+  above). Exactly the state the retention patch institutionalizes:
+  glibc invented it, shipped it for a decade, and fixed it under an
+  all-sharers-upgrade assumption.
+- 2.25 (2017), BZ#20973 (commit 353683a22ed8): robust wake discipline -
+  a woken waiter taking over a dead owner failed to restore
+  FUTEX_WAITERS, stranding other waiters. The assume_other_futex_waiters
+  fix protects a mutex only when every sharer runs >=2.25; an old peer's
+  takeover still drops the bit.
+- 2.25: pthread_cond_t internal format rewritten wholesale; pshared
+  condvars across the boundary are undefined. Shipped with no
+  negotiation - the de facto policy statement.
+
+musl events (verified in git):
+- v0.7.1 (2011): robust mutexes (owner masked 0x7fffffff era).
+- v1.1.5 (2014), 4220d298: lost-wake fix - pshared robust acquisitions
+  must set the waiters bit because the kernel death-wake keys on it.
+  Wake-discipline fix, complete only when all sharers upgraded; the
+  commit message is literally about the kernel dependency our series
+  cites (mval = (uval & FUTEX_WAITERS)).
+- v1.1.5 (2014), d338b506: unrecoverable-status encoding reworked
+  (type flag 8 semantics).
+- v1.1.22 (2019), 099b89d3 + 54ca6779 (same release): recovery state
+  moved from type-bit-8 to word-bit-30 (tid|0x40000000 = held by a LIVE
+  owner, not yet consistent; poison 0x7fffffff), and type-bit-8
+  simultaneously REDEFINED as priority inheritance. Mixed-version
+  consequences are catastrophic in both directions: an old peer's
+  recovery writes _m_type|=8, after which new peers dispatch the mutex
+  as PI and issue FUTEX_LOCK_PI against a non-PI word; a new peer's
+  recovery word tid|0x40000000 reads to old peers as a dead-owner
+  takeover candidate ("own & 0x40000000" acquirable), so an old peer
+  CASes bare tid over a LIVE owner - mutual exclusion violated.
+- Correction to the sentinel note above: the cross-era ENOTRECOVERABLE
+  poison value is 0x7fffffff (pre-1.1.22 reads own&0x7fffffff ==
+  0x7fffffff, post-1.1.22 reads own&0x3fffffff == 0x3fffffff - both
+  match); bare 0x3fffffff would read as a foreign live owner (EBUSY /
+  wait forever) to pre-1.1.22 musl.
+
+Verdict: process-shared mutex compatibility across libc versions has
+never been a kept contract in either implementation. Both shipped
+wake-discipline fixes in exactly the retention change's class (glibc
+BZ#20973, musl 1.1.5) whose correctness presumes all sharers upgrade;
+both re-encoded shared protocol state with zero negotiation (glibc 2.7
+pshared bit, musl 1.1.22 bit reuse); and glibc itself produced
+FUTEX_WAITERS|0 for a decade and resolved it by removing the producer
+while consumers still hang. The retention proposal's posture
+(tolerance patch + no-emission-by-default + an optional fail-loud kind
+bit) is stricter than the historical practice of either libc.
